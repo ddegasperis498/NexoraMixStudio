@@ -1,0 +1,30 @@
+{
+  "product": "Nexora Mix Studio V8 Tablet Console",
+  "counts": {
+    "csharp": 72,
+    "xaml": 8,
+    "csproj": 6,
+    "javascript": 2,
+    "html": 1,
+    "css": 1
+  },
+  "checks": {
+    "xml_valid": true,
+    "csharp_delimiters_valid": true,
+    "not_implemented_exception_absent": true,
+    "empty_catch_absent": true,
+    "single_wave_out_event": true,
+    "tablet_remote_host_present": true,
+    "remote_ui_present": true,
+    "android_wrapper_present": true,
+    "aspnet_framework_reference": true,
+    "remote_ui_copied_to_output": true,
+    "meter_peak_one_way": true,
+    "no_youtube_downloader_code": true
+  },
+  "xml_errors": [],
+  "brace_errors": [],
+  "build_windows": "NOT_RUN",
+  "build_android": "NOT_RUN",
+  "reason": "dotnet SDK and Windows/Android workloads are not installed in the generation environment"
+}

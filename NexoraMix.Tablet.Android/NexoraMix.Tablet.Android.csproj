@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationId>it.nexora.mix.tablet</ApplicationId>
+    <ApplicationTitle>Nexora Mix Tablet</ApplicationTitle>
+    <ApplicationVersion>8</ApplicationVersion>
+    <ApplicationDisplayVersion>8.0</ApplicationDisplayVersion>
+    <SupportedOSPlatformVersion>26.0</SupportedOSPlatformVersion>
+    <AndroidUseLatestPlatformSdk>true</AndroidUseLatestPlatformSdk>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+  </PropertyGroup>
+</Project>

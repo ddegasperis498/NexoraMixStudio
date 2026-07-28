@@ -1,0 +1,17 @@
+{
+  "csharp_files": 58,
+  "xaml_files": 6,
+  "project_files": 5,
+  "csharp_syntax_errors": [],
+  "xml_errors": [],
+  "empty_catches": false,
+  "not_implemented_exception": false,
+  "waveout_instances": 1,
+  "deck_ids_present": true,
+  "meter_binding_one_way": true,
+  "solution_missing_projects": [],
+  "auto_mashup_present": true,
+  "generic_midi_present": true,
+  "recording_present": true,
+  "status": "STATIC_PASS"
+}

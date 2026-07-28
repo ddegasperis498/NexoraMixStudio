@@ -1,0 +1,270 @@
+<UserControl x:Class="NexoraMix.App.Views.DeckPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:NexoraMix.App.Controls"
+             AllowDrop="True"
+             DragOver="Deck_DragOver"
+             Drop="Deck_Drop"
+             MinWidth="300" MinHeight="390">
+    <UserControl.Resources>
+        <Style x:Key="DeckLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style x:Key="PadButton" TargetType="Button" BasedOn="{StaticResource SmallButton}">
+            <Setter Property="MinWidth" Value="46"/>
+            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="Padding" Value="8,5"/>
+        </Style>
+        <Style x:Key="LoopButton" TargetType="Button" BasedOn="{StaticResource SmallButton}">
+            <Setter Property="MinWidth" Value="48"/>
+            <Setter Property="Padding" Value="8,5"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Border Style="{StaticResource CardBorder}" Margin="5" Padding="12">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Titolo, BPM e stato -->
+            <Grid Grid.Row="0" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="52"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border Width="46" Height="46" CornerRadius="12" Background="{StaticResource SurfaceAltBrush}" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1.5">
+                    <TextBlock Text="{Binding Name}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="21" FontWeight="Bold"/>
+                </Border>
+                <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding TrackTitle}" FontWeight="Bold" FontSize="16" TextTrimming="CharacterEllipsis" ToolTip="{Binding TrackTitle}"/>
+                    <TextBlock Text="{Binding Artist}" Foreground="{StaticResource MutedTextBrush}" FontSize="13" TextTrimming="CharacterEllipsis" ToolTip="{Binding Artist}"/>
+                </StackPanel>
+                <Button Grid.Column="2"
+                        Content="CARICA QUI"
+                        Click="LoadHere_Click"
+                        Style="{StaticResource PrimaryButton}"
+                        FontSize="15"
+                        FontWeight="Bold"
+                        MinHeight="42"
+                        Padding="14,8"
+                        Margin="6,0,10,0"
+                        ToolTip="Carica nel deck la traccia selezionata nella libreria. Puoi anche trascinare un file audio direttamente qui."/>
+                <StackPanel Grid.Column="3" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding EffectiveBpmText}" FontSize="16" FontWeight="Bold" HorizontalAlignment="Right"/>
+                    <TextBlock Text="{Binding SyncStateText}" Foreground="{StaticResource AccentBrush}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Piatto realmente animato + waveform -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="150"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <controls:JogWheelControl Grid.Column="0"
+                                          Width="140" Height="140"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          DeckLabel="{Binding Name, Mode=OneWay}"
+                                          IsPlaying="{Binding IsPlaying, Mode=OneWay}"
+                                          Bpm="{Binding EffectiveBpm, Mode=OneWay}"
+                                          PositionSeconds="{Binding PositionSeconds, Mode=OneWay}"
+                                          AccentBrush="{StaticResource AccentBrush}"
+                                          Jogged="JogWheel_Jogged"/>
+
+                <Grid Grid.Column="1" Margin="12,0,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <controls:WaveformControl Grid.Row="0" MinHeight="105"
+                                              Samples="{Binding Waveform, Mode=OneWay}"
+                                              PositionSeconds="{Binding PositionSeconds, Mode=OneWay}"
+                                              DurationSeconds="{Binding DurationSeconds, Mode=OneWay}"
+                                              Bpm="{Binding Bpm, Mode=OneWay}"
+                                              BeatOffsetSeconds="{Binding BeatOffsetSeconds, Mode=OneWay}"
+                                              BeatsPerBar="{Binding BeatsPerBar, Mode=OneWay}"
+                                              CueInSeconds="{Binding CueInSeconds, Mode=OneWay}"
+                                              SeekRequested="Waveform_SeekRequested"/>
+                    <Grid Grid.Row="1" Margin="0,7,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{Binding BeatCounterText}" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding BeatProgressText}" Foreground="{StaticResource MutedTextBrush}" FontSize="12"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="{Binding PositionText}" FontSize="19" FontWeight="Bold" Margin="8,0" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Text="{Binding RemainingText}" Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center"/>
+                    </Grid>
+                    <Grid Grid.Row="2" Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="86"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="BPM" Style="{StaticResource DeckLabel}" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Margin="7,0" Text="{Binding TargetBpm, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat=F2}"/>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                            <Button Content="−0,1" Command="{Binding BpmDownCommand}" Style="{StaticResource SmallButton}"/>
+                            <Button Content="+0,1" Command="{Binding BpmUpCommand}" Style="{StaticResource SmallButton}"/>
+                        </StackPanel>
+                        <Slider Grid.Column="3" Minimum="-25" Maximum="25" Value="{Binding TempoPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="Pitch/tempo manuale"/>
+                        <TextBlock Grid.Column="4" Text="{Binding TempoText}" FontWeight="Bold" MinWidth="58" TextAlignment="Right" VerticalAlignment="Center"/>
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            <!-- Trasporto principale sempre visibile -->
+            <UniformGrid Grid.Row="2" Columns="8" Margin="0,10,0,6">
+                <Button Content="{Binding PlayLabel}" Command="{Binding PlayPauseCommand}" Style="{StaticResource PrimaryButton}"/>
+                <Button Content="{Binding CutLabel}"
+                        Style="{StaticResource TransportButton}"
+                        PreviewMouseLeftButtonDown="Cut_Pressed"
+                        PreviewMouseLeftButtonUp="Cut_Released"
+                        MouseLeave="Cut_Released"
+                        TouchDown="Cut_TouchDown"
+                        TouchUp="Cut_TouchUp"/>
+                <Button Content="CUE" Command="{Binding CueCommand}" Style="{StaticResource TransportButton}"/>
+                <Button Content="SET CUE" Command="{Binding SetCueCommand}" Style="{StaticResource TransportButton}"/>
+                <Button Content="{Binding LoopLabel}" Command="{Binding LoopCommand}" Style="{StaticResource TransportButton}"/>
+                <Button Content="{Binding SyncLabel}" Command="{Binding SyncCommand}" Style="{StaticResource TransportButton}"/>
+                <Button Content="{Binding MasterLabel}" Command="{Binding MasterCommand}" Style="{StaticResource TransportButton}"/>
+                <Button Content="STOP" Command="{Binding StopCommand}" Style="{StaticResource DangerButton}"/>
+            </UniformGrid>
+
+            <!-- Hot cue sempre visibili -->
+            <Grid Grid.Row="3" Margin="0,2,0,7">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="HOT CUE" Style="{StaticResource DeckLabel}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <UniformGrid Grid.Column="1" Columns="8">
+                    <Button Content="1" Tag="1" Click="HotCue_Click" Style="{StaticResource PadButton}"/>
+                    <Button Content="2" Tag="2" Click="HotCue_Click" Style="{StaticResource PadButton}"/>
+                    <Button Content="3" Tag="3" Click="HotCue_Click" Style="{StaticResource PadButton}"/>
+                    <Button Content="4" Tag="4" Click="HotCue_Click" Style="{StaticResource PadButton}"/>
+                    <Button Content="5" Tag="5" Click="HotCue_Click" Style="{StaticResource PadButton}"/>
+                    <Button Content="6" Tag="6" Click="HotCue_Click" Style="{StaticResource PadButton}"/>
+                    <Button Content="7" Tag="7" Click="HotCue_Click" Style="{StaticResource PadButton}"/>
+                    <Button Content="8" Tag="8" Click="HotCue_Click" Style="{StaticResource PadButton}"/>
+                </UniformGrid>
+            </Grid>
+
+            <!-- Controlli organizzati per funzione: niente più parete di slider -->
+            <TabControl Grid.Row="4" MinHeight="128" Background="Transparent" BorderBrush="{StaticResource StrokeSoftBrush}">
+                <TabItem Header="MIXER">
+                    <Grid Margin="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="VOLUME" Style="{StaticResource DeckLabel}" VerticalAlignment="Center"/>
+                        <Slider Grid.Column="1" Minimum="0" Maximum="1.1" Value="{Binding Volume, Mode=TwoWay}"/>
+                        <TextBlock Grid.Column="2" Text="LIVELLO" Style="{StaticResource DeckLabel}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        <ProgressBar Grid.Column="3" Minimum="0" Maximum="1" Height="12" Value="{Binding MeterPeak, Mode=OneWay}"/>
+
+                        <Grid Grid.Row="1" Grid.ColumnSpan="4" Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="LOW" Style="{StaticResource DeckLabel}" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="-24" Maximum="12" Value="{Binding LowEq, Mode=TwoWay}"/>
+                            <TextBlock Grid.Column="2" Text="MID" Style="{StaticResource DeckLabel}" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="3" Minimum="-24" Maximum="12" Value="{Binding MidEq, Mode=TwoWay}"/>
+                            <TextBlock Grid.Column="4" Text="HIGH" Style="{StaticResource DeckLabel}" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="5" Minimum="-24" Maximum="12" Value="{Binding HighEq, Mode=TwoWay}"/>
+                            <TextBlock Grid.Column="6" Text="FILTER" Style="{StaticResource DeckLabel}" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="7" Minimum="-1" Maximum="1" Value="{Binding Filter, Mode=TwoWay}"/>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="LOOP">
+                    <Grid Margin="8">
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <TextBlock Text="Scegli la lunghezza in battute, poi attiva LOOP. Tutti i loop sono quantizzati sulla beat-grid." Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"/>
+                        <UniformGrid Grid.Row="1" Columns="8" Margin="0,9,0,0">
+                            <Button Content="1/2" Tag="1" Click="LoopSize_Click" Style="{StaticResource LoopButton}" ToolTip="Mezza battuta (approssimata a 1 beat nel motore attuale)"/>
+                            <Button Content="1" Tag="1" Click="LoopSize_Click" Style="{StaticResource LoopButton}"/>
+                            <Button Content="2" Tag="2" Click="LoopSize_Click" Style="{StaticResource LoopButton}"/>
+                            <Button Content="4" Tag="4" Click="LoopSize_Click" Style="{StaticResource LoopButton}"/>
+                            <Button Content="8" Tag="8" Click="LoopSize_Click" Style="{StaticResource LoopButton}"/>
+                            <Button Content="16" Tag="16" Click="LoopSize_Click" Style="{StaticResource LoopButton}"/>
+                            <Button Content="32" Tag="32" Click="LoopSize_Click" Style="{StaticResource LoopButton}"/>
+                            <Button Content="LOOP ON/OFF" Command="{Binding LoopCommand}" Style="{StaticResource PrimaryButton}"/>
+                        </UniformGrid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="EFFETTI">
+                    <Grid Margin="8">
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <UniformGrid Columns="6">
+                            <Button Content="ECHO" Tag="echo" Click="EffectToggle_Click"/>
+                            <Button Content="CRUSH" Tag="crush" Click="EffectToggle_Click"/>
+                            <Button Content="SAT" Tag="sat" Click="EffectToggle_Click"/>
+                            <Button Content="GATE" Tag="gate" Click="EffectToggle_Click"/>
+                            <Button Content="ROLL" Tag="roll" Click="EffectToggle_Click"/>
+                            <Button Content="BRAKE" Tag="brake" Click="EffectToggle_Click"/>
+                        </UniformGrid>
+                        <Grid Grid.Row="1" Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="ECHO" Style="{StaticResource DeckLabel}" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding EchoMix, Mode=TwoWay}"/>
+                            <TextBlock Grid.Column="2" Text="CRUSH" Style="{StaticResource DeckLabel}" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="3" Minimum="0" Maximum="1" Value="{Binding BitCrush, Mode=TwoWay}"/>
+                            <TextBlock Grid.Column="4" Text="COMP" Style="{StaticResource DeckLabel}" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="5" Minimum="0" Maximum="1" Value="{Binding Compressor, Mode=TwoWay}"/>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="GRIGLIA BPM">
+                    <Grid Margin="8">
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <TextBlock Text="Correggi la prima battuta e il BPM quando l'analisi automatica non coincide con la musica." Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"/>
+                        <UniformGrid Grid.Row="1" Columns="7" Margin="0,9,0,0">
+                            <Button Content="−10 ms" Command="{Binding NudgeGridBackwardCommand}"/>
+                            <Button Content="+10 ms" Command="{Binding NudgeGridForwardCommand}"/>
+                            <Button Content="1° BEAT QUI" Command="{Binding SetFirstBeatCommand}"/>
+                            <Button Content="½ BPM" Command="{Binding HalfBpmCommand}"/>
+                            <Button Content="×2 BPM" Command="{Binding DoubleBpmCommand}"/>
+                            <Button Content="TAP BPM" Command="{Binding TapBpmCommand}"/>
+                            <Button Content="RESET TEMPO" Command="{Binding ResetTempoCommand}"/>
+                        </UniformGrid>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </Border>
+</UserControl>

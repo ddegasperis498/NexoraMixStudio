@@ -1,0 +1,15 @@
+{
+  "csharpFiles": 44,
+  "csharpIssues": 0,
+  "xmlAndProjectFiles": 9,
+  "xmlIssues": 0,
+  "xamlEventHandlersMissing": 0,
+  "staticResourcesMissing": 0,
+  "waveOutEventInstances": 1,
+  "legacyDeckPlayerFound": false,
+  "notImplementedMarkersFound": false,
+  "emptyCatchBlocks": 0,
+  "solutionProjectsPresent": 4,
+  "dotnetBuildExecuted": false,
+  "reasonBuildNotExecuted": "dotnet SDK and Windows Desktop runtime unavailable in generation environment"
+}

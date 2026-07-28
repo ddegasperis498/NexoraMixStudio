@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <AssemblyName>NexoraMix</AssemblyName>
+    <RootNamespace>NexoraMix.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\NexoraMix.ico</ApplicationIcon>
+    <Version>8.0.0</Version>
+    <AssemblyVersion>8.0.0.0</AssemblyVersion>
+    <FileVersion>8.0.0.0</FileVersion>
+    <InformationalVersion>8.0.0-tablet-console-beta</InformationalVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NexoraMix.Core\NexoraMix.Core.csproj" />
+    <ProjectReference Include="..\NexoraMix.Audio\NexoraMix.Audio.csproj" />
+    <ProjectReference Include="..\..\Nexora.AI\src\Nexora.AI.Embedded\Nexora.AI.Embedded.csproj" />
+    <ProjectReference Include="..\..\..\PuliziaSpazioDev\Nexora.MusicIntelligence.Catalog\Nexora.MusicIntelligence.Catalog.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\DemoAudio\*.wav" Link="DemoAudio\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Assets\NexoraLogo.png" />
+    <None Remove="Assets\NexoraLogo256.png" />
+    <Resource Include="Assets\NexoraLogo.png" />
+    <Resource Include="Assets\NexoraLogo256.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="RemoteUi\**\*" />
+    <Content Include="RemoteUi\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+</Project>

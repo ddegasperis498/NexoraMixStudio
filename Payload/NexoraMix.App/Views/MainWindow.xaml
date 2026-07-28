@@ -1,0 +1,466 @@
+<Window x:Class="NexoraMix.App.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:NexoraMix.App.Controls"
+        Title="Nexora Mix Studio V5.3 Hybrid"
+        Width="1680" Height="980"
+        MinWidth="1180" MinHeight="700"
+        WindowStartupLocation="CenterScreen"
+        Closing="Window_Closing"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        AllowDrop="True"
+        DragOver="Window_DragOver"
+        Drop="Window_Drop">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="72" />
+            <RowDefinition Height="500" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="32" />
+        </Grid.RowDefinitions>
+
+        <!-- COMMAND BAR -->
+        <Border Grid.Row="0" Style="{StaticResource CardBorder}" Padding="16,10" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border Width="48" Height="48" CornerRadius="14" Background="{StaticResource AccentBrush}" Margin="0,0,14,0">
+                    <TextBlock Text="N" Foreground="#04130F" FontSize="26" FontWeight="Black"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="NEXORA MIX STUDIO" FontSize="21" FontWeight="Bold" />
+                    <TextBlock Text="V5.3 HYBRID  •  FILE LOCALI IN SYNC  •  SPOTIFY ESTERNO  •  BPM MANUALE"
+                               Foreground="{StaticResource MutedTextBrush}" FontSize="11" Margin="0,3,0,0" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="＋ FILE LOCALI" Command="{Binding ImportFilesCommand}" Style="{StaticResource PrimaryButton}" />
+                    <Button Content="IMPORTA SCALETTA SPOTIFY" Command="{Binding ImportSpotifyCommand}" />
+                    <Button Content="⚡ DEMO SYNC" Command="{Binding LoadDemoCommand}" Style="{StaticResource DeckBButton}" Padding="16,8" />
+                    <Border Background="#111B2A" BorderBrush="{StaticResource StrokeBrush}" BorderThickness="1"
+                            CornerRadius="10" Padding="10,6" Margin="8,0,0,0">
+                        <StackPanel>
+                            <TextBlock Text="{Binding SpotifyStatus}" FontSize="10" Foreground="{StaticResource MutedTextBrush}" HorizontalAlignment="Right" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="CONFIGURA" Command="{Binding ConfigureSpotifyCommand}" Style="{StaticResource SmallButton}" Padding="7,3" MinHeight="24" />
+                                <Button Content="CONNETTI" Command="{Binding ConnectSpotifyCommand}" Style="{StaticResource SmallButton}" Padding="7,3" MinHeight="24" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- DECKS + MASTER MIXER -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="310" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- DECK A -->
+            <Border Grid.Column="0" Style="{StaticResource CardBorder}" Margin="0,0,10,0" ClipToBounds="True">
+                <Grid DataContext="{Binding DeckA}" Margin="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="5" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="170" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Border Background="{StaticResource DeckABrush}" />
+
+                    <Grid Grid.Row="1" Margin="16,12,16,7">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="43" Height="43" CornerRadius="12" Background="#153A35" BorderBrush="{StaticResource DeckABrush}" BorderThickness="1">
+                            <TextBlock Text="A" Foreground="{StaticResource DeckABrush}" FontSize="20" FontWeight="Black"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding TrackTitle}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Artist}" Foreground="{StaticResource MutedTextBrush}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <Border Background="#132132" CornerRadius="6" Padding="7,3" Margin="0,0,5,0">
+                                    <TextBlock Text="{Binding MasterLabel}" FontSize="9" FontWeight="Bold" />
+                                </Border>
+                                <Border Background="#132132" CornerRadius="6" Padding="7,3">
+                                    <TextBlock Text="{Binding SyncStateText}" FontSize="9" Foreground="{StaticResource DeckABrush}" FontWeight="Bold" />
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                            <Border Background="#102923" CornerRadius="10" Padding="11,7">
+                                <StackPanel>
+                                    <TextBlock Text="ORIGINALE" Foreground="{StaticResource MutedTextBrush}" FontSize="8" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding BpmText}" Foreground="{StaticResource DeckABrush}" FontSize="17" FontWeight="Bold" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding EffectiveBpmText}" FontSize="10" HorizontalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Grid.Row="2" Margin="17,0,17,7">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding PositionText}" FontFamily="Cascadia Mono, Consolas" FontSize="28" FontWeight="SemiBold" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Margin="0,0,0,3">
+                            <TextBlock Text="{Binding RemainingText}" FontFamily="Cascadia Mono, Consolas" FontSize="15" Foreground="{StaticResource MutedTextBrush}" HorizontalAlignment="Right" />
+                            <TextBlock Text="{Binding StateText}" FontSize="9" Foreground="{StaticResource SubtleTextBrush}" HorizontalAlignment="Right" />
+                            <TextBlock Text="{Binding PlaybackModeText}" FontSize="8" Foreground="{StaticResource MutedTextBrush}" HorizontalAlignment="Right" />
+                        </StackPanel>
+                    </Grid>
+
+                    <controls:WaveformControl x:Name="DeckAWaveform" Grid.Row="3" Margin="15,0"
+                                              Samples="{Binding Waveform, Mode=OneWay}"
+                                              PositionSeconds="{Binding PositionSeconds, Mode=OneWay}"
+                                              DurationSeconds="{Binding DurationSeconds, Mode=OneWay}"
+                                              Bpm="{Binding Bpm, Mode=OneWay}"
+                                              BeatOffsetSeconds="{Binding BeatOffsetSeconds, Mode=OneWay}"
+                                              BeatsPerBar="{Binding BeatsPerBar, Mode=OneWay}"
+                                              CueInSeconds="{Binding CueInSeconds, Mode=OneWay}"
+                                              WaveBrush="{StaticResource DeckABrush}"
+                                              SeekRequested="DeckAWaveform_SeekRequested" />
+
+                    <Grid Grid.Row="4" Margin="14,5,14,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="100" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" ToolTip="Correzione manuale della beat-grid">
+                            <Button Content="−10 ms" Command="{Binding NudgeGridBackwardCommand}" Style="{StaticResource SmallButton}" Padding="5,2" MinHeight="24" FontSize="10" />
+                            <Button Content="1° BEAT" Command="{Binding SetFirstBeatCommand}" Style="{StaticResource SmallButton}" Padding="5,2" MinHeight="24" FontSize="10" />
+                            <Button Content="+10 ms" Command="{Binding NudgeGridForwardCommand}" Style="{StaticResource SmallButton}" Padding="5,2" MinHeight="24" FontSize="10" />
+                            <Button Content="½ BPM" Command="{Binding HalfBpmCommand}" Style="{StaticResource SmallButton}" Padding="5,2" MinHeight="24" FontSize="10" />
+                            <Button Content="2× BPM" Command="{Binding DoubleBpmCommand}" Style="{StaticResource SmallButton}" Padding="5,2" MinHeight="24" FontSize="10" />
+                        </StackPanel>
+                        <ProgressBar Grid.Column="1" Value="{Binding MeterPeak, Mode=OneWay, FallbackValue=0, TargetNullValue=0}" Maximum="1" Height="5" VerticalAlignment="Center" />
+                    </Grid>
+
+                    <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10,7,10,2">
+                        <Button Content="{Binding PlayLabel}" Command="{Binding PlayPauseCommand}" Style="{StaticResource DeckAButton}" MinWidth="82" />
+                        <Button Content="CUE" Command="{Binding CueCommand}" Style="{StaticResource TransportButton}" />
+                        <Button Content="SET CUE" Command="{Binding SetCueCommand}" Style="{StaticResource TransportButton}" />
+                        <Button Content="{Binding LoopLabel}" Command="{Binding LoopCommand}" Style="{StaticResource TransportButton}" />
+                        <Button Content="STOP" Command="{Binding StopCommand}" Style="{StaticResource TransportButton}" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="6" Margin="14,3,14,12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="{Binding MasterLabel}" Command="{Binding MasterCommand}" Style="{StaticResource SmallButton}" MinWidth="112" />
+                            <Button Content="{Binding SyncLabel}" Command="{Binding SyncCommand}" Style="{StaticResource DeckAButton}" MinWidth="88" />
+                            <TextBlock Text="{Binding TempoText}" Margin="9,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource DeckABrush}" FontWeight="Bold" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,1">
+                            <TextBlock Text="BPM" VerticalAlignment="Center" Margin="0,0,5,0" FontSize="9" Foreground="{StaticResource MutedTextBrush}" />
+                            <Button Content="−0,1" Command="{Binding BpmDownCommand}" Style="{StaticResource SmallButton}" Padding="7,3" MinHeight="24" />
+                            <TextBox Text="{Binding TargetBpm, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}"
+                                     Width="66" Height="26" Margin="4,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                     ToolTip="BPM desiderato. Sui file locali cambia la velocità; su Spotify salva soltanto il BPM dichiarato." />
+                            <Button Content="+0,1" Command="{Binding BpmUpCommand}" Style="{StaticResource SmallButton}" Padding="7,3" MinHeight="24" />
+                            <Button Content="RESET TEMPO" Command="{Binding ResetTempoCommand}" Style="{StaticResource SmallButton}" Padding="7,3" MinHeight="24" />
+                        </StackPanel>
+                        <Grid Grid.Row="2" Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"><TextBlock Text="TEMPO ±25%" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource MutedTextBrush}" /><Slider IsEnabled="{Binding CanUseMixerControls, Mode=OneWay}" Value="{Binding TempoPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Minimum="-25" Maximum="25" /></StackPanel>
+                            <StackPanel Grid.Column="1"><TextBlock Text="LOW" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource MutedTextBrush}" /><Slider IsEnabled="{Binding CanUseMixerControls, Mode=OneWay}" Value="{Binding LowEq, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Minimum="-24" Maximum="12" /></StackPanel>
+                            <StackPanel Grid.Column="2"><TextBlock Text="MID" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource MutedTextBrush}" /><Slider IsEnabled="{Binding CanUseMixerControls, Mode=OneWay}" Value="{Binding MidEq, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Minimum="-24" Maximum="12" /></StackPanel>
+                            <StackPanel Grid.Column="3"><TextBlock Text="HIGH" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource MutedTextBrush}" /><Slider IsEnabled="{Binding CanUseMixerControls, Mode=OneWay}" Value="{Binding HighEq, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Minimum="-24" Maximum="12" /></StackPanel>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- MASTER MIXER -->
+            <Border Grid.Column="1" Style="{StaticResource CardBorder}" Margin="0,0,10,0" Padding="13">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="SMART MASTER MIXER" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" />
+                        <TextBlock Text="single clock · equal-power · phase correction" FontSize="9" Foreground="{StaticResource MutedTextBrush}" HorizontalAlignment="Center" />
+                    </StackPanel>
+
+                    <Border Grid.Row="1" Background="#111D2B" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,10,0,8">
+                        <StackPanel>
+                            <TextBlock Text="{Binding MasterDeckText}" HorizontalAlignment="Center" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" />
+                            <TextBlock Text="{Binding SyncHealth}" HorizontalAlignment="Center" FontSize="11" Margin="0,3,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Grid.Row="2">
+                        <ToggleButton Content="⚡ SMART AUTOMIX" IsChecked="{Binding AutoMixEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TogglePill}" />
+                        <TextBlock Text="TRANSIZIONE" FontSize="9" Foreground="{StaticResource MutedTextBrush}" HorizontalAlignment="Center" Margin="0,9,0,0" />
+                        <TextBlock Text="{Binding TransitionText}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" />
+                        <Slider Value="{Binding TransitionBeats, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Minimum="4" Maximum="32" TickFrequency="4" IsSnapToTickEnabled="True" />
+                        <CheckBox Content="Bass swap automatico" IsChecked="{Binding BassSwapEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" Margin="0,5,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3" Margin="0,10,0,0">
+                        <TextBlock Text="CROSSFADER" FontSize="9" Foreground="{StaticResource MutedTextBrush}" HorizontalAlignment="Center" />
+                        <Grid Margin="2,4">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="A" Foreground="{StaticResource DeckABrush}" FontWeight="Bold" VerticalAlignment="Center" />
+                            <Slider Grid.Column="1" Value="{Binding Crossfader, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Minimum="-1" Maximum="1" />
+                            <TextBlock Grid.Column="2" Text="B" Foreground="{StaticResource DeckBBrush}" FontWeight="Bold" VerticalAlignment="Center" />
+                        </Grid>
+                        <Button Content="CENTRA" Command="{Binding CenterCrossfaderCommand}" Style="{StaticResource SmallButton}" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="4" Margin="0,10,0,0">
+                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="Errore fase" Foreground="{StaticResource MutedTextBrush}" FontSize="10" /><TextBlock Grid.Column="1" Text="{Binding PhaseErrorText}" FontFamily="Cascadia Mono, Consolas" />
+                        <TextBlock Grid.Row="1" Text="Drift" Foreground="{StaticResource MutedTextBrush}" FontSize="10" /><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DriftText}" FontFamily="Cascadia Mono, Consolas" />
+                        <TextBlock Grid.Row="2" Text="Picco master" Foreground="{StaticResource MutedTextBrush}" FontSize="10" /><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding MasterPeakText}" FontFamily="Cascadia Mono, Consolas" />
+                    </Grid>
+
+                    <StackPanel Grid.Row="5" Margin="0,10,0,0">
+                        <TextBlock Text="LIMITE SYNC" FontSize="9" Foreground="{StaticResource MutedTextBrush}" HorizontalAlignment="Center" />
+                        <TextBlock Text="{Binding MaximumSyncText}" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" />
+                        <Slider Value="{Binding MaximumSyncPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Minimum="4" Maximum="25" />
+                        <Border Background="#241826" CornerRadius="8" Padding="8" Margin="0,8,0,0">
+                            <StackPanel>
+                                <TextBlock Text="LIMITER MASTER" FontSize="9" Foreground="{StaticResource DangerBrush}" HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding ClippingText, StringFormat='Clip rilevati: {0}'}" FontSize="10" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <Button Grid.Row="6" Content="■ STOP TUTTO" Command="{Binding StopAllCommand}" Style="{StaticResource DangerButton}" Margin="0,10,0,0" />
+                </Grid>
+            </Border>
+
+            <!-- DECK B -->
+            <Border Grid.Column="2" Style="{StaticResource CardBorder}" ClipToBounds="True">
+                <Grid DataContext="{Binding DeckB}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="5" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="170" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Border Background="{StaticResource DeckBBrush}" />
+
+                    <Grid Grid.Row="1" Margin="16,12,16,7">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <Border Width="43" Height="43" CornerRadius="12" Background="#251C4A" BorderBrush="{StaticResource DeckBBrush}" BorderThickness="1">
+                            <TextBlock Text="B" Foreground="{StaticResource DeckBBrush}" FontSize="20" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding TrackTitle}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Artist}" Foreground="{StaticResource MutedTextBrush}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <Border Background="#19162B" CornerRadius="6" Padding="7,3" Margin="0,0,5,0"><TextBlock Text="{Binding MasterLabel}" FontSize="9" FontWeight="Bold" /></Border>
+                                <Border Background="#19162B" CornerRadius="6" Padding="7,3"><TextBlock Text="{Binding SyncStateText}" FontSize="9" Foreground="{StaticResource DeckBBrush}" FontWeight="Bold" /></Border>
+                            </StackPanel>
+                        </StackPanel>
+                        <Border Grid.Column="2" Background="#211943" CornerRadius="10" Padding="11,7" VerticalAlignment="Center">
+                            <StackPanel>
+                                <TextBlock Text="ORIGINALE" Foreground="{StaticResource MutedTextBrush}" FontSize="8" HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding BpmText}" Foreground="{StaticResource DeckBBrush}" FontSize="17" FontWeight="Bold" HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding EffectiveBpmText}" FontSize="10" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <Grid Grid.Row="2" Margin="17,0,17,7">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding PositionText}" FontFamily="Cascadia Mono, Consolas" FontSize="28" FontWeight="SemiBold" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Margin="0,0,0,3">
+                            <TextBlock Text="{Binding RemainingText}" FontFamily="Cascadia Mono, Consolas" FontSize="15" Foreground="{StaticResource MutedTextBrush}" HorizontalAlignment="Right" />
+                            <TextBlock Text="{Binding StateText}" FontSize="9" Foreground="{StaticResource SubtleTextBrush}" HorizontalAlignment="Right" />
+                            <TextBlock Text="{Binding PlaybackModeText}" FontSize="8" Foreground="{StaticResource MutedTextBrush}" HorizontalAlignment="Right" />
+                        </StackPanel>
+                    </Grid>
+
+                    <controls:WaveformControl x:Name="DeckBWaveform" Grid.Row="3" Margin="15,0"
+                                              Samples="{Binding Waveform, Mode=OneWay}"
+                                              PositionSeconds="{Binding PositionSeconds, Mode=OneWay}"
+                                              DurationSeconds="{Binding DurationSeconds, Mode=OneWay}"
+                                              Bpm="{Binding Bpm, Mode=OneWay}"
+                                              BeatOffsetSeconds="{Binding BeatOffsetSeconds, Mode=OneWay}"
+                                              BeatsPerBar="{Binding BeatsPerBar, Mode=OneWay}"
+                                              CueInSeconds="{Binding CueInSeconds, Mode=OneWay}"
+                                              WaveBrush="{StaticResource DeckBBrush}"
+                                              SeekRequested="DeckBWaveform_SeekRequested" />
+
+                    <Grid Grid.Row="4" Margin="14,5,14,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="100" /></Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" ToolTip="Correzione manuale della beat-grid">
+                            <Button Content="−10 ms" Command="{Binding NudgeGridBackwardCommand}" Style="{StaticResource SmallButton}" Padding="5,2" MinHeight="24" FontSize="10" />
+                            <Button Content="1° BEAT" Command="{Binding SetFirstBeatCommand}" Style="{StaticResource SmallButton}" Padding="5,2" MinHeight="24" FontSize="10" />
+                            <Button Content="+10 ms" Command="{Binding NudgeGridForwardCommand}" Style="{StaticResource SmallButton}" Padding="5,2" MinHeight="24" FontSize="10" />
+                            <Button Content="½ BPM" Command="{Binding HalfBpmCommand}" Style="{StaticResource SmallButton}" Padding="5,2" MinHeight="24" FontSize="10" />
+                            <Button Content="2× BPM" Command="{Binding DoubleBpmCommand}" Style="{StaticResource SmallButton}" Padding="5,2" MinHeight="24" FontSize="10" />
+                        </StackPanel>
+                        <ProgressBar Grid.Column="1" Value="{Binding MeterPeak, Mode=OneWay, FallbackValue=0, TargetNullValue=0}" Maximum="1" Height="5" VerticalAlignment="Center" />
+                    </Grid>
+
+                    <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10,7,10,2">
+                        <Button Content="{Binding PlayLabel}" Command="{Binding PlayPauseCommand}" Style="{StaticResource DeckBButton}" MinWidth="82" />
+                        <Button Content="CUE" Command="{Binding CueCommand}" Style="{StaticResource TransportButton}" />
+                        <Button Content="SET CUE" Command="{Binding SetCueCommand}" Style="{StaticResource TransportButton}" />
+                        <Button Content="{Binding LoopLabel}" Command="{Binding LoopCommand}" Style="{StaticResource TransportButton}" />
+                        <Button Content="STOP" Command="{Binding StopCommand}" Style="{StaticResource TransportButton}" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="6" Margin="14,3,14,12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="{Binding MasterLabel}" Command="{Binding MasterCommand}" Style="{StaticResource SmallButton}" MinWidth="112" />
+                            <Button Content="{Binding SyncLabel}" Command="{Binding SyncCommand}" Style="{StaticResource DeckBButton}" MinWidth="88" />
+                            <TextBlock Text="{Binding TempoText}" Margin="9,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource DeckBBrush}" FontWeight="Bold" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,1">
+                            <TextBlock Text="BPM" VerticalAlignment="Center" Margin="0,0,5,0" FontSize="9" Foreground="{StaticResource MutedTextBrush}" />
+                            <Button Content="−0,1" Command="{Binding BpmDownCommand}" Style="{StaticResource SmallButton}" Padding="7,3" MinHeight="24" />
+                            <TextBox Text="{Binding TargetBpm, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat={}{0:F1}}"
+                                     Width="66" Height="26" Margin="4,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                     ToolTip="BPM desiderato. Sui file locali cambia la velocità; su Spotify salva soltanto il BPM dichiarato." />
+                            <Button Content="+0,1" Command="{Binding BpmUpCommand}" Style="{StaticResource SmallButton}" Padding="7,3" MinHeight="24" />
+                            <Button Content="RESET TEMPO" Command="{Binding ResetTempoCommand}" Style="{StaticResource SmallButton}" Padding="7,3" MinHeight="24" />
+                        </StackPanel>
+                        <Grid Grid.Row="2" Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0"><TextBlock Text="TEMPO ±25%" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource MutedTextBrush}" /><Slider IsEnabled="{Binding CanUseMixerControls, Mode=OneWay}" Value="{Binding TempoPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Minimum="-25" Maximum="25" /></StackPanel>
+                            <StackPanel Grid.Column="1"><TextBlock Text="LOW" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource MutedTextBrush}" /><Slider IsEnabled="{Binding CanUseMixerControls, Mode=OneWay}" Value="{Binding LowEq, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Minimum="-24" Maximum="12" /></StackPanel>
+                            <StackPanel Grid.Column="2"><TextBlock Text="MID" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource MutedTextBrush}" /><Slider IsEnabled="{Binding CanUseMixerControls, Mode=OneWay}" Value="{Binding MidEq, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Minimum="-24" Maximum="12" /></StackPanel>
+                            <StackPanel Grid.Column="3"><TextBlock Text="HIGH" HorizontalAlignment="Center" FontSize="9" Foreground="{StaticResource MutedTextBrush}" /><Slider IsEnabled="{Binding CanUseMixerControls, Mode=OneWay}" Value="{Binding HighEq, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Minimum="-24" Maximum="12" /></StackPanel>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- LIBRARY -->
+        <Border Grid.Row="2" Style="{StaticResource CardBorder}" Margin="0,10,0,0" Padding="0">
+            <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="52" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                <Grid Margin="12,6">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock Text="LIBRERIA E SCALETTA" FontWeight="Bold" />
+                            <TextBlock Text="{Binding LibrarySummary}" FontSize="10" Foreground="{StaticResource MutedTextBrush}" />
+                        </StackPanel>
+                        <Button Content="＋ FILE" Command="{Binding ImportFilesCommand}" Style="{StaticResource SmallButton}" />
+                        <Button Content="＋ SPOTIFY" Command="{Binding ImportSpotifyCommand}" Style="{StaticResource SmallButton}" />
+                        <Button Content="COLLEGA FILE LOCALE" Command="{Binding LinkLocalFileCommand}" Style="{StaticResource SmallButton}" />
+                        <Button Content="ANALIZZA" Command="{Binding AnalyzeSelectedCommand}" Style="{StaticResource SmallButton}" />
+                        <Button Content="ANALIZZA TUTTO" Command="{Binding AnalyzeAllCommand}" Style="{StaticResource SmallButton}" />
+                        <Button Content="ORDINA PER BPM" Command="{Binding SmartOrderCommand}" Style="{StaticResource SmallButton}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="Spotify può essere caricato come player esterno. Sync, EQ e crossfader restano disponibili solo per file locali."
+                               Foreground="{StaticResource MutedTextBrush}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="APRI SPOTIFY" Command="{Binding OpenSpotifyCommand}" Style="{StaticResource SmallButton}" />
+                        <Button Content="APRI SESSIONE" Command="{Binding LoadSessionCommand}" Style="{StaticResource SmallButton}" />
+                        <Button Content="SALVA" Command="{Binding SaveSessionCommand}" Style="{StaticResource SmallButton}" />
+                        <Button Content="RIMUOVI" Command="{Binding RemoveSelectedCommand}" Style="{StaticResource SmallButton}" />
+                    </StackPanel>
+                </Grid>
+
+                <DataGrid x:Name="LibraryGrid" Grid.Row="1"
+                          ItemsSource="{Binding Library, Mode=OneWay}"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          AutoGenerateColumns="False"
+                          SelectedItem="{Binding SelectedTrack, Mode=TwoWay}"
+                          MouseDoubleClick="LibraryGrid_MouseDoubleClick">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="TITOLO" Binding="{Binding Title, Mode=OneWay}" Width="2.1*" />
+                        <DataGridTextColumn Header="ARTISTA" Binding="{Binding Artist, Mode=OneWay}" Width="1.35*" />
+                        <DataGridTextColumn Header="BPM" Binding="{Binding BpmText, Mode=OneWay}" Width="70" />
+                        <DataGridTextColumn Header="DURATA" Binding="{Binding DurationText, Mode=OneWay}" Width="75" />
+                        <DataGridTextColumn Header="CUE" Binding="{Binding CueText, Mode=OneWay}" Width="85" />
+                        <DataGridTextColumn Header="ORIGINE" Binding="{Binding SourceDisplay, Mode=OneWay}" Width="145" />
+                        <DataGridTextColumn Header="STATO ANALISI" Binding="{Binding AnalysisStatus, Mode=OneWay}" Width="1.55*" />
+                        <DataGridTemplateColumn Header="DECK" Width="112">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="A" IsEnabled="{Binding CanAssignToDeck, Mode=OneWay}"
+                                                Command="{Binding DataContext.LoadDeckACommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" Style="{StaticResource SmallButton}" MinWidth="36" Padding="8,5" />
+                                        <Button Content="B" IsEnabled="{Binding CanAssignToDeck, Mode=OneWay}"
+                                                Command="{Binding DataContext.LoadDeckBCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" Style="{StaticResource SmallButton}" MinWidth="36" Padding="8,5" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="3" Margin="4,3,4,0">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding Status}" Foreground="{StaticResource MutedTextBrush}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Column="1" Text="SPACE Play/Pause · Q/P Cue · S Sync · M cambia Master · Ctrl+O File · Ctrl+S Salva"
+                       Foreground="{StaticResource SubtleTextBrush}" FontSize="10" VerticalAlignment="Center" />
+        </Grid>
+
+        <!-- BUSY OVERLAY -->
+        <Grid Grid.RowSpan="4" Background="#B8070A10" Visibility="{Binding IsBusy, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+            <Border Width="390" Padding="28" Style="{StaticResource CardBorder}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="NEXORA MIX" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding BusyMessage}" Margin="0,10,0,16" TextAlignment="Center" Foreground="{StaticResource MutedTextBrush}" />
+                    <ProgressBar IsIndeterminate="True" Height="7" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

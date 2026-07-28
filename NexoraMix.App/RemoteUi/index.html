@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#071019" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Nexora Mix Tablet Console</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/nexora-icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="pairing" class="pairing-screen">
+    <section class="pair-card">
+      <img class="brand-logo hero" src="assets/nexora-logo.png" alt="Nexora Mix Studio" />
+      <p class="eyebrow">NEXORA MIX STUDIO</p>
+      <h1>Console DJ per tablet</h1>
+      <p class="pair-copy">Il motore audio resta sul PC. Il tablet controlla piatti, mixer, loop, hot cue, effetti, Sync e Auto Mashup in tempo reale.</p>
+      <label for="pairCode">Codice di abbinamento</label>
+      <input id="pairCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" />
+      <button id="connectButton" class="button primary large">COLLEGA AL PC</button>
+      <p id="pairError" class="error-message" role="alert"></p>
+      <p class="fine-print">PC e tablet devono essere sulla stessa rete Wi-Fi. Il codice è mostrato nella scheda <strong>Tablet / Android</strong> del programma Windows.</p>
+    </section>
+  </div>
+
+  <div id="app" class="app-shell hidden">
+    <header class="topbar">
+      <div class="brand-block">
+        <img class="brand-logo small" src="assets/nexora-icon-192.png" alt="Nexora" />
+        <div>
+          <strong>NEXORA MIX</strong>
+          <span>TABLET CONSOLE</span>
+        </div>
+      </div>
+      <div class="connection-block">
+        <span id="connectionDot" class="status-dot"></span>
+        <span id="connectionText">Connessione…</span>
+      </div>
+      <div class="top-actions">
+        <button id="viewClassic" class="button compact active">2 DECK</button>
+        <button id="viewFour" class="button compact">4 DECK</button>
+        <button id="viewMixer" class="button compact">MIXER</button>
+        <button id="fullscreenButton" class="button compact">SCHERMO INTERO</button>
+        <button id="disconnectButton" class="button compact danger">SCOLLEGA</button>
+      </div>
+    </header>
+
+    <section class="master-strip">
+      <div class="master-stat">
+        <span>MASTER</span>
+        <strong id="masterDeck">A</strong>
+      </div>
+      <div class="master-stat grow">
+        <span>STATO</span>
+        <strong id="globalStatus">In attesa</strong>
+      </div>
+      <div class="master-stat">
+        <span>SYNC</span>
+        <strong id="syncHealth">—</strong>
+      </div>
+      <div class="master-stat">
+        <span>PEAK</span>
+        <strong id="masterPeak">—</strong>
+      </div>
+      <div class="master-stat">
+        <span>CLIP</span>
+        <strong id="clipping">0</strong>
+      </div>
+      <button id="recordButton" class="button record">REGISTRA</button>
+      <button id="masterCueButton" class="button">MASTER CUE</button>
+      <label class="cue-volume"><span>VOL CUE</span><input id="cueVolume" type="range" min="0" max="1.5" step="0.01" value="0.75" /></label>
+      <button id="mashupButton" class="button accent">AUTO MASHUP</button>
+      <button id="stopAllButton" class="button danger">STOP TUTTO</button>
+    </section>
+
+    <section id="quickMixer" class="quick-mixer">
+      <button id="quickCueA" class="button">CUE A</button>
+      <div class="quick-crossfader">
+        <span>A</span>
+        <input id="quickCrossfader" type="range" min="-1" max="1" step="0.001" value="0" />
+        <span>B</span>
+      </div>
+      <button id="quickCenter" class="button">CENTRA</button>
+      <button id="quickCueB" class="button">CUE B</button>
+    </section>
+
+    <main>
+      <section id="deckWorkspace" class="deck-workspace classic-mode"></section>
+
+      <section id="mixerWorkspace" class="mixer-workspace">
+        <div class="mixer-header">
+          <div>
+            <p class="eyebrow">MIXER MASTER</p>
+            <h2>4 canali · A/C sinistra · B/D destra</h2>
+          </div>
+          <button id="centerCrossfaderButton" class="button">CENTRA CROSSFADER</button>
+        </div>
+        <div id="channelStrips" class="channel-strips"></div>
+        <div class="crossfader-panel">
+          <span class="side-label left">A / C</span>
+          <input id="crossfader" type="range" min="-1" max="1" step="0.001" value="0" />
+          <span class="side-label right">B / D</span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footerbar">
+      <span id="footerStatus">Pronto</span>
+      <span id="latencyStatus">Aggiornamento 10 Hz</span>
+    </footer>
+  </div>
+
+  <template id="deckTemplate">
+    <article class="deck-card">
+      <header class="deck-header">
+        <div class="deck-badge">A</div>
+        <div class="track-meta">
+          <h2 class="track-title">Deck vuoto</h2>
+          <p class="track-artist">Carica una traccia dal PC</p>
+        </div>
+        <div class="deck-bpm">
+          <strong class="bpm-value">—</strong>
+          <span>BPM</span>
+        </div>
+      </header>
+
+      <div class="deck-performance">
+        <div class="platter-zone">
+          <div class="platter" role="slider" aria-label="Jog wheel">
+            <div class="vinyl-grooves"></div>
+            <div class="platter-marker"></div>
+            <div class="platter-label">
+              <strong class="platter-deck">DECK A</strong>
+              <span class="platter-state">PAUSED</span>
+            </div>
+          </div>
+          <div class="time-row">
+            <strong class="position-time">0:00.0</strong>
+            <span class="remaining-time">-0:00.0</span>
+          </div>
+        </div>
+
+        <div class="wave-zone">
+          <canvas class="waveform" width="800" height="220"></canvas>
+          <div class="beat-line">
+            <strong class="bar-beat">MISURA 0 · 0/4</strong>
+            <span class="beat-count">BEAT 0</span>
+          </div>
+          <div class="tempo-box">
+            <button class="button square bpm-down">−</button>
+            <div>
+              <span>BPM TARGET</span>
+              <strong class="target-bpm">—</strong>
+            </div>
+            <button class="button square bpm-up">+</button>
+          </div>
+          <input class="tempo-slider" type="range" min="-25" max="25" step="0.1" value="0" />
+          <div class="tempo-labels"><span>−25%</span><strong class="tempo-percent">0.0%</strong><span>+25%</span></div>
+        </div>
+      </div>
+
+      <div class="transport-grid">
+        <button class="button primary play-button">PLAY</button>
+        <button class="button cut-button">CUT</button>
+        <button class="button cue-button">CUE</button>
+        <button class="button set-cue-button">SET CUE</button>
+        <button class="button sync-button">SYNC</button>
+        <button class="button master-button">MASTER</button>
+        <button class="button danger stop-button">STOP</button>
+      </div>
+
+      <div class="performance-tabs" role="tablist">
+        <button class="performance-tab active" data-panel="loops">LOOP</button>
+        <button class="performance-tab" data-panel="hotcues">HOT CUE</button>
+        <button class="performance-tab" data-panel="effects">EFFETTI</button>
+        <button class="performance-tab" data-panel="mixer">MIXER</button>
+      </div>
+
+      <div class="performance-panel loops-panel active">
+        <div class="loop-grid">
+          <button data-beats="1">1</button>
+          <button data-beats="2">2</button>
+          <button data-beats="4">4</button>
+          <button data-beats="8" class="selected">8</button>
+          <button data-beats="16">16</button>
+          <button data-beats="32">32</button>
+          <button class="loop-toggle primary">LOOP ON/OFF</button>
+        </div>
+      </div>
+
+      <div class="performance-panel hotcues-panel">
+        <div class="pad-grid">
+          <button data-cue="1">1</button><button data-cue="2">2</button><button data-cue="3">3</button><button data-cue="4">4</button>
+          <button data-cue="5">5</button><button data-cue="6">6</button><button data-cue="7">7</button><button data-cue="8">8</button>
+        </div>
+      </div>
+
+      <div class="performance-panel effects-panel">
+        <div class="knob-grid">
+          <label><span>FILTER</span><input data-effect="filter" type="range" min="-1" max="1" step="0.01" value="0" /></label>
+          <label><span>ECHO</span><input data-effect="echo" type="range" min="0" max="1" step="0.01" value="0" /></label>
+          <label><span>CRUSH</span><input data-effect="crush" type="range" min="0" max="1" step="0.01" value="0" /></label>
+          <label><span>SAT</span><input data-effect="saturation" type="range" min="0" max="1" step="0.01" value="0" /></label>
+          <label><span>GATE</span><input data-effect="gate" type="range" min="0" max="1" step="0.01" value="0" /></label>
+          <label><span>COMP</span><input data-effect="compressor" type="range" min="0" max="1" step="0.01" value="0" /></label>
+          <label><span>ROLL</span><input data-effect="roll" type="range" min="0" max="1" step="0.01" value="0" /></label>
+          <label><span>BRAKE</span><input data-effect="brake" type="range" min="0" max="1" step="0.01" value="0" /></label>
+        </div>
+      </div>
+
+      <div class="performance-panel mixer-panel">
+        <div class="eq-grid">
+          <label><span>LOW</span><input data-eq="low" type="range" min="-24" max="12" step="0.1" value="0" /></label>
+          <label><span>MID</span><input data-eq="mid" type="range" min="-24" max="12" step="0.1" value="0" /></label>
+          <label><span>HIGH</span><input data-eq="high" type="range" min="-24" max="12" step="0.1" value="0" /></label>
+          <label><span>VOLUME</span><input data-eq="volume" type="range" min="0" max="1.1" step="0.01" value="0.9" /></label>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <template id="channelTemplate">
+    <div class="channel-strip">
+      <header><strong>DECK A</strong><span class="channel-bpm">— BPM</span></header>
+      <div class="meter"><div class="meter-fill"></div></div>
+      <label><span>GAIN</span><input data-channel="volume" type="range" min="0" max="1.1" step="0.01" value="0.9" /></label>
+      <label><span>HIGH</span><input data-channel="high" type="range" min="-24" max="12" step="0.1" value="0" /></label>
+      <label><span>MID</span><input data-channel="mid" type="range" min="-24" max="12" step="0.1" value="0" /></label>
+      <label><span>LOW</span><input data-channel="low" type="range" min="-24" max="12" step="0.1" value="0" /></label>
+      <label><span>FILTER</span><input data-channel="filter" type="range" min="-1" max="1" step="0.01" value="0" /></label>
+      <div class="channel-actions">
+        <button class="button channel-cue">CUE</button>
+        <button class="button channel-sync">SYNC</button>
+        <button class="button channel-master">MASTER</button>
+      </div>
+    </div>
+  </template>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

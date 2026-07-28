@@ -1,0 +1,43 @@
+<UserControl x:Class="NexoraMix.App.Views.ChannelStrip"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             MinWidth="105" MinHeight="330">
+    <Border Background="#0C1320" BorderBrush="{StaticResource StrokeSoftBrush}" BorderThickness="1" CornerRadius="12" Padding="9" Margin="4">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="{Binding Name, StringFormat=CH {0}}" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Grid.Row="1" Text="{Binding EffectiveBpmText}" Foreground="{StaticResource AccentBrush}" FontSize="12" HorizontalAlignment="Center" Margin="0,2,0,8"/>
+
+            <StackPanel Grid.Row="2">
+                <TextBlock Text="HIGH" Foreground="{StaticResource MutedTextBrush}" FontSize="12" HorizontalAlignment="Center"/>
+                <Slider Minimum="-24" Maximum="12" Value="{Binding HighEq, Mode=TwoWay}" ToolTip="Equalizzatore alti"/>
+                <TextBlock Text="MID" Foreground="{StaticResource MutedTextBrush}" FontSize="12" HorizontalAlignment="Center"/>
+                <Slider Minimum="-24" Maximum="12" Value="{Binding MidEq, Mode=TwoWay}" ToolTip="Equalizzatore medi"/>
+                <TextBlock Text="LOW" Foreground="{StaticResource MutedTextBrush}" FontSize="12" HorizontalAlignment="Center"/>
+                <Slider Minimum="-24" Maximum="12" Value="{Binding LowEq, Mode=TwoWay}" ToolTip="Equalizzatore bassi"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="3" Margin="0,8,0,0">
+                <TextBlock Text="FILTER" Foreground="{StaticResource MutedTextBrush}" FontSize="12" HorizontalAlignment="Center"/>
+                <Slider Minimum="-1" Maximum="1" Value="{Binding Filter, Mode=TwoWay}" ToolTip="Filtro DJ: sinistra low-pass, destra high-pass"/>
+            </StackPanel>
+
+            <ProgressBar Grid.Row="4" Minimum="0" Maximum="1" Height="9" Margin="4,9" Value="{Binding MeterPeak, Mode=OneWay}" ToolTip="Livello canale"/>
+
+            <Slider Grid.Row="5" Orientation="Vertical" Minimum="0" Maximum="1.1" Value="{Binding Volume, Mode=TwoWay}" HorizontalAlignment="Center" Height="115" Width="36" ToolTip="Fader canale"/>
+
+            <UniformGrid Grid.Row="6" Columns="2" Margin="0,8,0,0">
+                <Button Content="{Binding CueMonitorLabel}" Command="{Binding ToggleCueMonitorCommand}" Style="{StaticResource SmallButton}"/>
+                <Button Content="SYNC" Command="{Binding SyncCommand}" Style="{StaticResource SmallButton}"/>
+            </UniformGrid>
+        </Grid>
+    </Border>
+</UserControl>

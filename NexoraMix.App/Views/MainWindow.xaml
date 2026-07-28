@@ -1,0 +1,403 @@
+<Window x:Class="NexoraMix.App.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:NexoraMix.App.Views"
+        Title="Nexora Mix Studio V8 · Tablet Console"
+        Icon="/Assets/NexoraLogo256.png"
+        Width="1580" Height="980" MinWidth="900" MinHeight="620"
+        WindowStartupLocation="CenterScreen"
+        AllowDrop="True"
+        DragOver="Window_DragOver"
+        Drop="Window_Drop"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        Closing="Window_Closing">
+    <Window.Resources>
+        <Style TargetType="TabItem">
+            <Setter Property="Padding" Value="17,11"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="Background" Value="#101827"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="MinHeight" Value="42"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="TabBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{StaticResource StrokeBrush}"
+                                BorderThickness="1,1,1,0"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource SurfaceBrush}"/>
+                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="TabBorder" Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+        <Style x:Key="HelpText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="LineHeight" Value="22"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Barra superiore: pochi comandi primari, leggibili -->
+        <Border Grid.Row="0" Background="#0D1420" BorderBrush="{StaticResource StrokeBrush}" BorderThickness="0,0,0,1" Padding="14,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border Width="56" Height="56" CornerRadius="14" Background="#05080D" BorderBrush="{StaticResource StrokeBrush}" BorderThickness="1" ClipToBounds="True">
+                    <Image Source="/Assets/NexoraLogo.png" Stretch="UniformToFill"/>
+                </Border>
+                <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                    <TextBlock Text="NEXORA MIX STUDIO" FontSize="20" FontWeight="Bold"/>
+                    <TextBlock Text="V8 · PC AUDIO ENGINE + ANDROID/TABLET REMOTE CONSOLE" Foreground="{StaticResource MutedTextBrush}" FontSize="12"/>
+                </StackPanel>
+                <WrapPanel Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Content="IMPORTA AUDIO" Command="{Binding ImportFilesCommand}" Style="{StaticResource PrimaryButton}"/>
+                    <Button Content="→ A" Command="{Binding LoadDeckACommand}"/>
+                    <Button Content="→ B" Command="{Binding LoadDeckBCommand}"/>
+                    <Button Content="→ C" Command="{Binding LoadDeckCCommand}"/>
+                    <Button Content="→ D" Command="{Binding LoadDeckDCommand}"/>
+                    <Button Content="DEMO" Command="{Binding LoadDemoCommand}"/>
+                    <Button Content="{Binding RecordingButtonText}" Command="{Binding StartStopRecordingCommand}"/>
+                    <Button Content="STOP TUTTO" Command="{Binding StopAllCommand}" Style="{StaticResource DangerButton}"/>
+                </WrapPanel>
+            </Grid>
+        </Border>
+
+        <TabControl Grid.Row="1" Margin="10" Background="{StaticResource WindowBrush}" BorderBrush="{StaticResource StrokeBrush}">
+            <!-- Modalità principale: 2 piatti grandi + mixer vero -->
+            <TabItem Header="CONSOLE">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="4">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" MinWidth="300"/>
+                                <ColumnDefinition Width="420"/>
+                                <ColumnDefinition Width="*" MinWidth="300"/>
+                            </Grid.ColumnDefinitions>
+                            <views:DeckPanel Grid.Column="0" DataContext="{Binding DeckA}"/>
+                            <views:MixerPanel Grid.Column="1" DataContext="{Binding}"/>
+                            <views:DeckPanel Grid.Column="2" DataContext="{Binding DeckB}"/>
+                        </Grid>
+
+                        <Expander Header="DECK C / D · APRI PER 4 DECK" Margin="6,10" Foreground="{StaticResource TextBrush}" FontWeight="Bold">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MinWidth="300"/>
+                                    <ColumnDefinition Width="*" MinWidth="300"/>
+                                </Grid.ColumnDefinitions>
+                                <views:DeckPanel Grid.Column="0" DataContext="{Binding DeckC}"/>
+                                <views:DeckPanel Grid.Column="1" DataContext="{Binding DeckD}"/>
+                            </Grid>
+                        </Expander>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Vista 4 deck completa -->
+            <TabItem Header="4 DECK">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                    <Grid MinWidth="980" Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="480"/>
+                            <ColumnDefinition Width="*" MinWidth="480"/>
+                        </Grid.ColumnDefinitions>
+                        <views:DeckPanel Grid.Row="0" Grid.Column="0" DataContext="{Binding DeckA}"/>
+                        <views:DeckPanel Grid.Row="0" Grid.Column="1" DataContext="{Binding DeckB}"/>
+                        <views:DeckPanel Grid.Row="1" Grid.Column="0" DataContext="{Binding DeckC}"/>
+                        <views:DeckPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding DeckD}"/>
+                        <views:MixerPanel Grid.Row="2" Grid.ColumnSpan="2" DataContext="{Binding}"/>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="LIBRERIA">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <WrapPanel Margin="0,0,0,10">
+                        <Button Content="IMPORTA FILE" Command="{Binding ImportFilesCommand}" Style="{StaticResource PrimaryButton}"/>
+                        <Button Content="CARICA IN A" Command="{Binding LoadDeckACommand}"/>
+                        <Button Content="CARICA IN B" Command="{Binding LoadDeckBCommand}"/>
+                        <Button Content="CARICA IN C" Command="{Binding LoadDeckCCommand}"/>
+                        <Button Content="CARICA IN D" Command="{Binding LoadDeckDCommand}"/>
+                        <Button Content="ANALIZZA SELEZIONATA" Command="{Binding AnalyzeSelectedCommand}"/>
+                        <Button Content="ANALIZZA TUTTO" Command="{Binding AnalyzeAllCommand}"/>
+                        <Button Content="COLLEGA FILE LOCALE" Command="{Binding LinkLocalFileCommand}"/>
+                        <Button Content="ORDINA PER BPM" Command="{Binding SmartOrderCommand}"/>
+                        <Button Content="SALVA SESSIONE" Command="{Binding SaveSessionCommand}"/>
+                        <Button Content="APRI SESSIONE" Command="{Binding LoadSessionCommand}"/>
+                    </WrapPanel>
+                    <DataGrid x:Name="LibraryGrid" Grid.Row="1"
+                              ItemsSource="{Binding Library}"
+                              SelectedItem="{Binding SelectedTrack, Mode=TwoWay}"
+                              IsReadOnly="True"
+                              MouseDoubleClick="LibraryGrid_MouseDoubleClick">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="MASHUP" Width="78">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding IsMashupSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="TITOLO" Binding="{Binding Title, Mode=OneWay}" Width="2*"/>
+                            <DataGridTextColumn Header="ARTISTA" Binding="{Binding Artist, Mode=OneWay}" Width="1.5*"/>
+                            <DataGridTextColumn Header="BPM" Binding="{Binding Bpm, Mode=OneWay, StringFormat=F2}" Width="75"/>
+                            <DataGridTextColumn Header="BATTUTE" Binding="{Binding DetectedBeatCount, Mode=OneWay}" Width="85"/>
+                            <DataGridTextColumn Header="MISURE" Binding="{Binding EstimatedBarCount, Mode=OneWay}" Width="78"/>
+                            <DataGridTextColumn Header="STATO" Binding="{Binding AnalysisStatus, Mode=OneWay}" Width="1.4*"/>
+                            <DataGridTemplateColumn Header="CARICA NEL DECK" Width="235">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <UniformGrid Columns="4">
+                                            <Button Content="A" Command="{Binding DataContext.LoadDeckACommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" CommandParameter="{Binding}" Style="{StaticResource SmallButton}"/>
+                                            <Button Content="B" Command="{Binding DataContext.LoadDeckBCommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" CommandParameter="{Binding}" Style="{StaticResource SmallButton}"/>
+                                            <Button Content="C" Command="{Binding DataContext.LoadDeckCCommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" CommandParameter="{Binding}" Style="{StaticResource SmallButton}"/>
+                                            <Button Content="D" Command="{Binding DataContext.LoadDeckDCommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" CommandParameter="{Binding}" Style="{StaticResource SmallButton}"/>
+                                        </UniformGrid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="NORA AI">
+                <Grid Margin="18">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Border Style="{StaticResource CardBorder}" Padding="18" Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="NORA DJ ASSISTANT" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock Text="{Binding NoraCurrentTrack, Mode=OneWay}" FontSize="17" FontWeight="Bold" Margin="0,6,0,2"/>
+                                <TextBlock Text="{Binding NoraStatus, Mode=OneWay}" Style="{StaticResource HelpText}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="AGGIORNA SUGGERIMENTI" Command="{Binding RefreshNoraCommand}" Style="{StaticResource PrimaryButton}" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+                    <TextBlock Grid.Row="1" Text="Classifica le tracce conosciute usando compatibilità BPM (anche half/double-time), genere e vicinanza dell'anno. PRONTA indica che il file è già caricabile da Mix Studio." Style="{StaticResource HelpText}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                    <DataGrid Grid.Row="2" ItemsSource="{Binding NoraRecommendations, Mode=OneWay}" IsReadOnly="True" AutoGenerateColumns="False">
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                <Setter Property="ClipToBounds" Value="True"/>
+                            </Style>
+                        </DataGrid.CellStyle>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="#" Binding="{Binding Position, Mode=OneWay}" Width="45"/>
+                            <DataGridTextColumn Header="TITOLO" Binding="{Binding Title, Mode=OneWay}" Width="250"/>
+                            <DataGridTextColumn Header="ARTISTA" Binding="{Binding Artist, Mode=OneWay}" Width="180"/>
+                            <DataGridTextColumn Header="BPM" Binding="{Binding Bpm, Mode=OneWay}" Width="70"/>
+                            <DataGridTextColumn Header="ANNO" Binding="{Binding Year, Mode=OneWay}" Width="70"/>
+                            <DataGridTextColumn Header="GENERE" Binding="{Binding Genre, Mode=OneWay}" Width="130"/>
+                            <DataGridTextColumn Header="MATCH" Binding="{Binding Compatibility, Mode=OneWay}" Width="80"/>
+                            <DataGridTextColumn Header="PERCHÉ" Binding="{Binding Explanation, Mode=OneWay}" Width="280"/>
+                            <DataGridTemplateColumn Header="AZIONE" Width="130">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="{Binding Availability, Mode=OneWay}"
+                                                IsEnabled="{Binding IsAvailableLocally, Mode=OneWay}"
+                                                Command="{Binding DataContext.LoadNoraSuggestionCommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
+                                                CommandParameter="{Binding}" Style="{StaticResource SmallButton}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="AUTO MASHUP">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="28" MaxWidth="1050">
+                        <TextBlock Text="AUTO MASHUP 2–4 TRACCE" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource HelpText}" Text="Seleziona da due a quattro file locali nella Libreria. Il planner sceglie il clock master, porta le tracce al BPM target e programma gli ingressi su battute e misure. Il limiter master protegge l'uscita."/>
+                        <Grid Margin="0,20,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="220"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="MODALITÀ" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <ComboBox Grid.Column="1" Margin="10,0" ItemsSource="{Binding MashupModes}" SelectedItem="{Binding SelectedMashupMode, Mode=TwoWay}"/>
+                            <TextBlock Grid.Column="2" Text="FRASE" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <ComboBox Grid.Column="3" Margin="10,0" ItemsSource="{Binding TransitionBeatOptions}" SelectedItem="{Binding TransitionBeats, Mode=TwoWay}"/>
+                        </Grid>
+                        <Border Style="{StaticResource CardBorder}" Padding="18" Margin="0,20">
+                            <TextBlock Text="{Binding MashupSummary}" FontSize="17" TextWrapping="Wrap"/>
+                        </Border>
+                        <WrapPanel>
+                            <Button Content="{Binding MashupButtonText}" Command="{Binding StartAutoMashupCommand}" Style="{StaticResource PrimaryButton}"/>
+                            <Button Content="STOP MASHUP" Command="{Binding StopAutoMashupCommand}"/>
+                            <Button Content="{Binding RecordingButtonText}" Command="{Binding StartStopRecordingCommand}"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Console tablet/PWA e app Android wrapper -->
+            <TabItem Header="TABLET / ANDROID">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="28" MaxWidth="1050">
+                        <TextBlock Text="TABLET COME CONSOLE DJ" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource HelpText}" Text="Il PC continua a produrre l'audio. Il tablet diventa una superficie di controllo touch: piatti animati, play/cue/sync, pitch, loop, hot cue, effetti, mixer 4 canali e crossfader. PC e tablet condividono lo stesso stato in tempo reale sulla rete locale."/>
+
+                        <Border Style="{StaticResource CardBorder}" Padding="20" Margin="0,20">
+                            <Grid>
+                                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="170"/><ColumnDefinition Width="*"/><ColumnDefinition Width="230"/></Grid.ColumnDefinitions>
+                                <TextBlock Text="STATO" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}"/>
+                                <TextBlock Grid.Column="1" Text="{Binding TabletConnectionStatus}" TextWrapping="Wrap"/>
+                                <TextBlock Grid.Row="1" Text="INDIRIZZO" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}" Margin="0,12,0,0"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TabletUrl}" FontSize="17" FontWeight="Bold" Margin="0,12,0,0" TextWrapping="Wrap"/>
+                                <TextBlock Grid.Row="2" Text="CODICE" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}" Margin="0,12,0,0"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding TabletPairingCode}" FontSize="26" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" Margin="0,8,0,0"/>
+                                <Border Grid.Column="2" Grid.RowSpan="4" Margin="22,0,0,0" Padding="12" CornerRadius="8" Background="#F7FBFF" BorderBrush="{StaticResource AccentBrush}" BorderThickness="2">
+                                    <Grid>
+                                        <Grid.RowDefinitions><RowDefinition Height="190"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                        <Image Source="{Binding TabletQrCodeImage, Mode=OneWay}" Stretch="Uniform"/>
+                                        <TextBlock Grid.Row="1" Text="{Binding TabletQrCodeText, Mode=OneWay}" Foreground="#121C2A" FontWeight="Bold" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,0"/>
+                                    </Grid>
+                                </Border>
+                                <WrapPanel Grid.Row="3" Grid.ColumnSpan="2" Margin="0,18,0,0">
+                                    <Button Content="{Binding TabletRemoteButtonText}" Command="{Binding StartStopTabletRemoteCommand}" Style="{StaticResource PrimaryButton}"/>
+                                    <Button Content="COPIA INDIRIZZO" Command="{Binding CopyTabletUrlCommand}"/>
+                                    <Button Content="APRI SU QUESTO PC" Command="{Binding OpenTabletConsoleCommand}"/>
+                                </WrapPanel>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Text="COME COLLEGARE" FontWeight="Bold" FontSize="16"/>
+                        <TextBlock Style="{StaticResource HelpText}" Margin="0,8,0,0" Text="1. Collega PC e tablet alla stessa rete Wi-Fi.  2. Premi AVVIA CONSOLE TABLET.  3. Apri l'indirizzo sul browser Android oppure nell'app NexoraMix.Tablet.  4. Inserisci il codice a 6 cifre.  5. Consenti Nexora Mix nel firewall di Windows quando richiesto."/>
+                        <TextBlock Margin="0,18,0,0" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" Text="Il piatto sul tablet gira in tempo reale quando il deck è in RUNNING. Il touch sul piatto esegue nudge/seek sul motore PC. Per scratching professionale a latenza minima è comunque preferibile un controller USB/HID collegato direttamente al PC."/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Import da file/Spotify/YouTube senza ripping automatico -->
+            <TabItem Header="IMPORTA MUSICA">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="28" MaxWidth="1050">
+                        <TextBlock Text="IMPORTA MUSICA" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource HelpText}" Text="Nexora lavora realmente sui file audio locali. La cartella Musica/Inbox viene controllata automaticamente: quando copi un MP3, WAV, FLAC o altro formato supportato, il file viene aggiunto alla libreria."/>
+                        <WrapPanel Margin="0,18,0,0">
+                            <Button Content="IMPORTA FILE AUDIO" Command="{Binding ImportFilesCommand}" Style="{StaticResource PrimaryButton}"/>
+                            <Button Content="APRI CARTELLA MUSICA" Command="{Binding OpenMusicFolderCommand}"/>
+                            <Button Content="IMPORTA DALLA CARTELLA" Command="{Binding ImportMusicInboxCommand}"/>
+                        </WrapPanel>
+                        <Border Style="{StaticResource CardBorder}" Padding="18" Margin="0,20">
+                            <StackPanel>
+                                <TextBlock Text="LINK YOUTUBE" FontSize="18" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding YouTubeImportNotice}" Style="{StaticResource HelpText}" Margin="0,8,0,12"/>
+                                <Button Content="INCOLLA E APRI LINK YOUTUBE" Command="{Binding OpenYouTubeLinkCommand}" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource CardBorder}" Padding="18">
+                            <StackPanel>
+                                <TextBlock Text="SPOTIFY" FontSize="18" FontWeight="Bold"/>
+                                <TextBlock Style="{StaticResource HelpText}" Margin="0,8,0,12" Text="Importa playlist e metadati Spotify. Per waveform, BPM, effetti, Sync e mix reale collega sempre il file audio locale corrispondente."/>
+                                <WrapPanel>
+                                    <Button Content="CONFIGURA SPOTIFY" Command="{Binding ConfigureSpotifyCommand}"/>
+                                    <Button Content="CONNETTI SPOTIFY" Command="{Binding ConnectSpotifyCommand}"/>
+                                    <Button Content="IMPORTA SCALETTA" Command="{Binding ImportSpotifyCommand}" Style="{StaticResource PrimaryButton}"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="CONTROLLER MIDI">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="28" MaxWidth="1050">
+                        <TextBlock Text="CONTROLLER E CONSOLE" Style="{StaticResource SectionTitle}"/>
+                        <TextBlock Style="{StaticResource HelpText}" Text="Generic MIDI USB è supportato. Pioneer/AlphaTheta, Gemini, Denon, Numark, Hercules, Reloop e altri possono funzionare quando espongono MIDI standard. HID, display e LED proprietari restano sperimentali finché verificati su uno specifico modello."/>
+                        <Grid Margin="0,18,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <ComboBox ItemsSource="{Binding ControllerDevices}" SelectedItem="{Binding SelectedController, Mode=TwoWay}" DisplayMemberPath="ProductName" MinWidth="430"/>
+                            <Button Grid.Column="1" Content="AGGIORNA" Command="{Binding RefreshControllersCommand}"/>
+                            <Button Grid.Column="2" Content="COLLEGA" Command="{Binding ConnectControllerCommand}" Style="{StaticResource PrimaryButton}"/>
+                            <Button Grid.Column="3" Content="SCOLLEGA" Command="{Binding DisconnectControllerCommand}"/>
+                        </Grid>
+                        <Border Style="{StaticResource CardBorder}" Padding="18" Margin="0,18">
+                            <StackPanel>
+                                <TextBlock Text="{Binding ControllerStatus}" FontSize="17" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding LastMidiMessage}" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="2" Background="#0D1420" BorderBrush="{StaticResource StrokeBrush}" BorderThickness="0,1,0,0" Padding="10">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Status}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Status}"/>
+                <TextBlock Grid.Column="1" Text="{Binding MasterDeckText}" Foreground="{StaticResource AccentBrush}" Margin="18,0"/>
+                <TextBlock Grid.Column="2" Text="{Binding LibrarySummary}" Foreground="{StaticResource MutedTextBrush}"/>
+            </Grid>
+        </Border>
+
+        <Border Grid.RowSpan="3" Background="#D9070A10" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}">
+            <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Width="560"
+                    Padding="24"
+                    CornerRadius="8"
+                    Background="{StaticResource SurfaceBrush}"
+                    BorderBrush="{StaticResource AccentBrush}"
+                    BorderThickness="2">
+                <StackPanel>
+                    <TextBlock Text="PROCESSO IN CORSO" FontSize="22" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding BusyMessage}" Margin="0,12,0,8" FontSize="18" FontWeight="Bold" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding BusyProgressText}" Foreground="{StaticResource MutedTextBrush}" FontSize="14" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                    <ProgressBar Height="18"
+                                 Minimum="0"
+                                 Maximum="{Binding BusyProgressMaximum, Mode=OneWay}"
+                                 Value="{Binding BusyProgressValue, Mode=OneWay}"
+                                 IsIndeterminate="{Binding BusyProgressIsIndeterminate, Mode=OneWay}"/>
+                </StackPanel>
+            </Border>
+        </Border>
+    </Grid>
+</Window>
