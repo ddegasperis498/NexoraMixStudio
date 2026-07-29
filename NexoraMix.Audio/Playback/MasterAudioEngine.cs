@@ -10,6 +10,7 @@ public sealed class MasterAudioEngine : IDisposable
 {
     private readonly object _outputGate = new();
     private readonly AudioClock _clock = new();
+    private readonly bool _enableHardwareOutput;
     private readonly Dictionary<DeckId, DeckChannel> _decks;
     private readonly Dictionary<DeckId, DeckSide> _deckSides;
     private readonly MixingSampleProvider _mixer;
@@ -30,8 +31,9 @@ public sealed class MasterAudioEngine : IDisposable
     private int _masterDeviceNumber = -1;
     private int _cueDeviceNumber = -1;
 
-    public MasterAudioEngine(int sampleRate = 44_100)
+    public MasterAudioEngine(int sampleRate = 44_100, bool enableHardwareOutput = true)
     {
+        _enableHardwareOutput = enableHardwareOutput;
         WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, 2);
         _decks = Enum.GetValues<DeckId>()
             .ToDictionary(id => id, id => new DeckChannel(id, WaveFormat, _clock));
@@ -429,6 +431,7 @@ public sealed class MasterAudioEngine : IDisposable
 
     private void EnsureOutputStarted()
     {
+        if (!_enableHardwareOutput) return;
         lock (_outputGate)
         {
             ThrowIfDisposed();
@@ -457,6 +460,7 @@ public sealed class MasterAudioEngine : IDisposable
 
     private void EnsureCueOutputStarted()
     {
+        if (!_enableHardwareOutput) return;
         lock (_outputGate)
         {
             ThrowIfDisposed();

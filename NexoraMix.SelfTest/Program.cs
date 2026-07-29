@@ -71,7 +71,7 @@ for (var index = 0; index < Math.Min(demoFiles.Count, expectedDemoBpms.Length); 
     Check(error <= 1.0d, $"Rilevamento BPM demo {expectedDemoBpms[index]:0}");
 }
 
-using (var previewEngine = new MasterAudioEngine())
+using (var previewEngine = new MasterAudioEngine(enableHardwareOutput: false))
 {
     var previewTrack = new AudioTrack
     {
@@ -106,7 +106,7 @@ using (var previewEngine = new MasterAudioEngine())
     Check(previewEngine.PreviewState == PreviewPlaybackState.Empty && previewEngine.PreviewTrack is null, "Unload preview rilascia il file locale");
 }
 
-using (var engine = new MasterAudioEngine())
+using (var engine = new MasterAudioEngine(enableHardwareOutput: false))
 {
     var offlineTracks = new Dictionary<DeckId, AudioTrack>
     {
@@ -136,7 +136,7 @@ using (var engine = new MasterAudioEngine())
     Check(cuePeak > 0.001f, "Preascolto deck produce audio separato dal master");
 }
 
-using (var syncEngine = new MasterAudioEngine())
+using (var syncEngine = new MasterAudioEngine(enableHardwareOutput: false))
 {
     var masterTrack = new AudioTrack
     {
@@ -181,7 +181,7 @@ using (var syncEngine = new MasterAudioEngine())
     Check(activeBlocks > 20, "Sync offline mantiene audio continuo dopo l'aggancio");
 }
 
-using (var liveSyncEngine = new MasterAudioEngine())
+using (var liveSyncEngine = new MasterAudioEngine(enableHardwareOutput: false))
 {
     var masterTrack = new AudioTrack
     {
@@ -223,7 +223,7 @@ try
 {
     var samplePath = Path.Combine(samplerFolder, "one-shot.wav");
     WriteSineSample(samplePath, 220d, 0.2d);
-    using var samplerEngine = new MasterAudioEngine();
+    using var samplerEngine = new MasterAudioEngine(enableHardwareOutput: false);
     samplerEngine.Sampler.LoadSlot(0, samplePath, gain: 0.8d, choke: true);
     Check(samplerEngine.Sampler.LoadedSlots.Contains(0), "Sampler carica sample locale nello slot");
     Check(samplerEngine.Sampler.Trigger(0), "Sampler triggera sample caricato");
