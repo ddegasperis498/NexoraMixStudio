@@ -7,6 +7,7 @@ internal sealed class CueMixSampleProvider : ISampleProvider
 {
     private readonly IReadOnlyDictionary<DeckId, DeckChannel> _decks;
     private readonly AudioTapSampleProvider _masterTap;
+    private readonly PreviewChannel _preview;
     private readonly Dictionary<DeckId, bool> _deckCueEnabled = new();
     private float[] _scratch = Array.Empty<float>();
     private double _volume = 0.75d;
@@ -15,12 +16,14 @@ internal sealed class CueMixSampleProvider : ISampleProvider
     public CueMixSampleProvider(
         WaveFormat waveFormat,
         IReadOnlyDictionary<DeckId, DeckChannel> decks,
-        AudioTapSampleProvider masterTap)
+        AudioTapSampleProvider masterTap,
+        PreviewChannel preview)
     {
         WaveFormat = waveFormat;
         _decks = decks;
         foreach (var id in decks.Keys) _deckCueEnabled[id] = false;
         _masterTap = masterTap;
+        _preview = preview;
     }
 
     public WaveFormat WaveFormat { get; }
@@ -66,6 +69,18 @@ internal sealed class CueMixSampleProvider : ISampleProvider
         {
             Array.Clear(_scratch, 0, count);
             var read = _masterTap.ReadTap(_scratch, 0, count);
+            if (read > 0)
+            {
+                activeSources++;
+                for (var i = 0; i < read; i++)
+                    buffer[offset + i] += _scratch[i];
+            }
+        }
+
+        if (_preview.IsPlaying)
+        {
+            Array.Clear(_scratch, 0, count);
+            var read = _preview.Read(_scratch, 0, count);
             if (read > 0)
             {
                 activeSources++;

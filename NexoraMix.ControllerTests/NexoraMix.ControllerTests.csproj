@@ -10,4 +10,10 @@
     <ProjectReference Include="..\NexoraMix.Core\NexoraMix.Core.csproj" />
     <ProjectReference Include="..\NexoraMix.Audio\NexoraMix.Audio.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\NexoraMix.App\Services\NoraCatalogRepository.cs" Link="Services\NoraCatalogRepository.cs" />
+    <Compile Include="..\NexoraMix.App\Services\NoraPersonalizationStore.cs" Link="Services\NoraPersonalizationStore.cs" />
+    <Compile Include="..\NexoraMix.App\Services\NoraSetMemoryStore.cs" Link="Services\NoraSetMemoryStore.cs" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.10" />
+  </ItemGroup>
 </Project>

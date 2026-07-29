@@ -1,4 +1,7 @@
+using NAudio.Dsp;
 using NAudio.Wave;
+using NexoraMix.Core.Models;
+using NexoraMix.Core.Services;
 using IOFile = System.IO.File;
 using IOFileNotFoundException = System.IO.FileNotFoundException;
 
@@ -29,6 +32,8 @@ public sealed class BpmAnalyzer
         var samplesPerEnvelope = Math.Max(1, sampleRate / EnvelopeRate);
         var buffer = new float[Math.Max(8192, sampleRate / 2) * channels];
         var envelope = new List<float>((int)Math.Ceiling(durationSeconds * EnvelopeRate));
+        var spectrum = new SpectralAccumulator(sampleRate);
+        var truePeak = new TruePeakEstimator();
 
         double envelopeSum = 0;
         double squareSum = 0;
@@ -47,6 +52,8 @@ public sealed class BpmAnalyzer
                     monoSigned += buffer[i + channel];
 
                 monoSigned /= channels;
+                spectrum.Add((float)monoSigned);
+                truePeak.Add(monoSigned);
                 var absolute = Math.Abs(monoSigned);
                 envelopeSum += absolute;
                 squareSum += monoSigned * monoSigned;
@@ -64,6 +71,8 @@ public sealed class BpmAnalyzer
         if (monoSamplesInEnvelope > 0)
             envelope.Add((float)(envelopeSum / monoSamplesInEnvelope));
 
+        spectrum.Complete();
+
         var rms = totalMonoSamples > 0 ? Math.Sqrt(squareSum / totalMonoSamples) : 0;
         if (envelope.Count < EnvelopeRate * 4)
         {
@@ -78,7 +87,10 @@ public sealed class BpmAnalyzer
                 peak,
                 0,
                 0,
-                0);
+                0)
+            {
+                Features = BuildFeatures(0d, 0d, 0d, rms, peak, truePeak.Peak, spectrum)
+            };
         }
 
         var normalized = Normalize(envelope);
@@ -99,7 +111,10 @@ public sealed class BpmAnalyzer
                 peak,
                 0,
                 0,
-                0);
+                0)
+            {
+                Features = BuildFeatures(0d, confidence, 0d, rms, peak, truePeak.Peak, spectrum)
+            };
         }
 
         var phase = EstimateBeatPhase(onset, lag);
@@ -144,8 +159,73 @@ public sealed class BpmAnalyzer
             peak,
             detectedBeatCount,
             estimatedBarCount,
-            beatIntervalSeconds);
+            beatIntervalSeconds)
+        {
+            Features = BuildFeatures(bpm, confidence, combinedPhaseConfidence, rms, peak, truePeak.Peak, spectrum)
+        };
     }
+
+    private static TrackAudioFeatures BuildFeatures(
+        double bpm,
+        double bpmConfidence,
+        double phaseConfidence,
+        double rms,
+        double samplePeak,
+        double estimatedTruePeak,
+        SpectralAccumulator spectrum)
+    {
+        var key = spectrum.EstimateKey();
+        var rmsDb = ToDbFs(rms);
+        double? loudness = rms > 0d ? -0.691d + 10d * Math.Log10(rms * rms) : null;
+        var loudnessEnergy = rmsDb.HasValue ? Math.Clamp((rmsDb.Value + 45d) / 39d, 0d, 1d) : 0d;
+        var crest = rms > 0d ? Math.Clamp(samplePeak / rms / 8d, 0d, 1d) : 0d;
+        var energy = Math.Clamp(
+            loudnessEnergy * 0.60d +
+            spectrum.HighFrequencyRatio * 0.15d +
+            crest * 0.10d +
+            bpmConfidence * 0.15d,
+            0d,
+            1d);
+        double? danceability = bpm > 0d
+            ? Math.Clamp(bpmConfidence * 0.55d + phaseConfidence * 0.30d + spectrum.TransientRatio * 0.15d, 0d, 1d)
+            : null;
+        var availableConfidences = new[]
+            {
+                bpm > 0d ? bpmConfidence : double.NaN,
+                key.Confidence ?? double.NaN,
+                spectrum.FrameCount > 0 ? 0.65d : double.NaN
+            }
+            .Where(value => !double.IsNaN(value))
+            .ToArray();
+
+        return new TrackAudioFeatures
+        {
+            Status = AudioFeatureAnalysisStatus.Partial,
+            AnalysisVersion = TrackAudioFeatures.CurrentAnalysisVersion,
+            AnalyzedAtUtc = DateTimeOffset.UtcNow,
+            OverallConfidence = availableConfidences.Length > 0 ? availableConfidences.Average() : null,
+            Bpm = bpm > 0d ? Math.Round(bpm, 2) : null,
+            BpmConfidence = bpm > 0d ? Math.Clamp(bpmConfidence, 0d, 1d) : null,
+            MusicalKey = key.Key,
+            MusicalMode = key.Mode,
+            CamelotKey = key.Key is not null ? CamelotCompatibilityService.ToCamelot(key.Key, key.Mode) : null,
+            KeyConfidence = key.Confidence,
+            EstimatedIntegratedLufs = loudness.HasValue ? Math.Round(loudness.Value, 2) : null,
+            SamplePeakDbFs = ToDbFs(samplePeak),
+            EstimatedTruePeakDbFs = ToDbFs(estimatedTruePeak),
+            Energy = energy,
+            Danceability = danceability,
+            SpectralCentroidHz = spectrum.CentroidHz,
+            BassIntensity = spectrum.BassIntensity,
+            // Una classificazione vocale affidabile richiede un modello dedicato.
+            VocalPresence = VocalPresence.Unknown,
+            VocalConfidence = null,
+            Sections = Array.Empty<TrackAudioSection>()
+        };
+    }
+
+    private static double? ToDbFs(double linear) =>
+        linear > 0d ? Math.Round(20d * Math.Log10(linear), 2) : null;
 
     private static float[] Normalize(IReadOnlyList<float> values)
     {
@@ -340,5 +420,184 @@ public sealed class BpmAnalyzer
             result[point] = maximum;
         }
         return result;
+    }
+
+    private sealed class TruePeakEstimator
+    {
+        private readonly Queue<double> _samples = new(4);
+
+        public double Peak { get; private set; }
+
+        public void Add(double sample)
+        {
+            Peak = Math.Max(Peak, Math.Abs(sample));
+            _samples.Enqueue(sample);
+            if (_samples.Count < 4) return;
+
+            var values = _samples.ToArray();
+            for (var step = 1; step < 4; step++)
+            {
+                var t = step / 4d;
+                var interpolated = 0.5d * ((2d * values[1]) +
+                    (-values[0] + values[2]) * t +
+                    (2d * values[0] - 5d * values[1] + 4d * values[2] - values[3]) * t * t +
+                    (-values[0] + 3d * values[1] - 3d * values[2] + values[3]) * t * t * t);
+                Peak = Math.Max(Peak, Math.Abs(interpolated));
+            }
+            _samples.Dequeue();
+        }
+    }
+
+    private sealed class SpectralAccumulator
+    {
+        private const int FftSize = 2048;
+        private const int FftExponent = 11;
+        private const int HopSize = FftSize / 2;
+        private static readonly double[] MajorProfile =
+            { 6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88 };
+        private static readonly double[] MinorProfile =
+            { 6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17 };
+        private static readonly string[] PitchNames =
+            { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+
+        private readonly int _sampleRate;
+        private readonly float[] _samples = new float[FftSize];
+        private readonly Complex[] _fft = new Complex[FftSize];
+        private readonly double[] _chroma = new double[12];
+        private int _sampleCount;
+        private double _centroidWeightedSum;
+        private double _spectralMagnitudeSum;
+        private double _bassMagnitudeSum;
+        private double _highMagnitudeSum;
+        private double _previousFrameEnergy;
+        private double _positiveEnergyChange;
+        private double _totalEnergyChange;
+
+        public SpectralAccumulator(int sampleRate) => _sampleRate = sampleRate;
+
+        public int FrameCount { get; private set; }
+        public double? CentroidHz => _spectralMagnitudeSum > 0d
+            ? Math.Round(_centroidWeightedSum / _spectralMagnitudeSum, 2)
+            : null;
+        public double? BassIntensity => _spectralMagnitudeSum > 0d
+            ? Math.Clamp(_bassMagnitudeSum / _spectralMagnitudeSum, 0d, 1d)
+            : null;
+        public double HighFrequencyRatio => _spectralMagnitudeSum > 0d
+            ? Math.Clamp(_highMagnitudeSum / _spectralMagnitudeSum, 0d, 1d)
+            : 0d;
+        public double TransientRatio => _totalEnergyChange > 0d
+            ? Math.Clamp(_positiveEnergyChange / _totalEnergyChange, 0d, 1d)
+            : 0d;
+
+        public void Add(float sample)
+        {
+            _samples[_sampleCount++] = sample;
+            if (_sampleCount < FftSize) return;
+            ProcessFrame();
+            Array.Copy(_samples, HopSize, _samples, 0, HopSize);
+            _sampleCount = HopSize;
+        }
+
+        public void Complete()
+        {
+            if (_sampleCount < 128) return;
+            Array.Clear(_samples, _sampleCount, FftSize - _sampleCount);
+            ProcessFrame();
+            _sampleCount = 0;
+        }
+
+        public (string? Key, MusicalMode Mode, double? Confidence) EstimateKey()
+        {
+            var chromaTotal = _chroma.Sum();
+            if (chromaTotal <= 0d) return (null, MusicalMode.Unknown, null);
+
+            var bestScore = double.MinValue;
+            var secondScore = double.MinValue;
+            var bestRoot = 0;
+            var bestMode = MusicalMode.Unknown;
+            for (var root = 0; root < 12; root++)
+            {
+                EvaluateProfile(root, MajorProfile, MusicalMode.Major, ref bestScore, ref secondScore, ref bestRoot, ref bestMode);
+                EvaluateProfile(root, MinorProfile, MusicalMode.Minor, ref bestScore, ref secondScore, ref bestRoot, ref bestMode);
+            }
+
+            if (bestScore <= 0d || bestMode == MusicalMode.Unknown) return (null, MusicalMode.Unknown, null);
+            var confidence = Math.Clamp((bestScore - Math.Max(0d, secondScore)) / bestScore * 3d, 0d, 1d);
+            // Un risultato quasi indistinguibile dall'alternativa resta sconosciuto.
+            return confidence >= 0.05d
+                ? (PitchNames[bestRoot], bestMode, confidence)
+                : (null, MusicalMode.Unknown, confidence);
+        }
+
+        private void ProcessFrame()
+        {
+            for (var index = 0; index < FftSize; index++)
+            {
+                _fft[index].X = _samples[index] * (float)FastFourierTransform.HannWindow(index, FftSize);
+                _fft[index].Y = 0f;
+            }
+            FastFourierTransform.FFT(true, FftExponent, _fft);
+
+            double frameEnergy = 0d;
+            for (var bin = 1; bin < FftSize / 2; bin++)
+            {
+                var frequency = bin * _sampleRate / (double)FftSize;
+                var magnitude = Math.Sqrt(_fft[bin].X * _fft[bin].X + _fft[bin].Y * _fft[bin].Y);
+                if (magnitude <= 0d) continue;
+
+                _centroidWeightedSum += frequency * magnitude;
+                _spectralMagnitudeSum += magnitude;
+                frameEnergy += magnitude * magnitude;
+                if (frequency <= 250d) _bassMagnitudeSum += magnitude;
+                if (frequency >= 2_000d) _highMagnitudeSum += magnitude;
+                if (frequency is < 55d or > 5_000d) continue;
+
+                var midi = 69d + 12d * Math.Log2(frequency / 440d);
+                var pitchClass = ((int)Math.Round(midi) % 12 + 12) % 12;
+                _chroma[pitchClass] += magnitude;
+            }
+
+            if (FrameCount > 0)
+            {
+                var change = frameEnergy - _previousFrameEnergy;
+                _totalEnergyChange += Math.Abs(change);
+                if (change > 0d) _positiveEnergyChange += change;
+            }
+            _previousFrameEnergy = frameEnergy;
+            FrameCount++;
+        }
+
+        private void EvaluateProfile(
+            int root,
+            IReadOnlyList<double> profile,
+            MusicalMode mode,
+            ref double bestScore,
+            ref double secondScore,
+            ref int bestRoot,
+            ref MusicalMode bestMode)
+        {
+            double score = 0d;
+            double profileNorm = 0d;
+            double chromaNorm = 0d;
+            for (var index = 0; index < 12; index++)
+            {
+                var chroma = _chroma[(root + index) % 12];
+                score += chroma * profile[index];
+                profileNorm += profile[index] * profile[index];
+                chromaNorm += chroma * chroma;
+            }
+            score /= Math.Sqrt(Math.Max(double.Epsilon, profileNorm * chromaNorm));
+            if (score > bestScore)
+            {
+                secondScore = bestScore;
+                bestScore = score;
+                bestRoot = root;
+                bestMode = mode;
+            }
+            else if (score > secondScore)
+            {
+                secondScore = score;
+            }
+        }
     }
 }

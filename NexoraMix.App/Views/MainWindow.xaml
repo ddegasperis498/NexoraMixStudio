@@ -203,51 +203,105 @@
             </TabItem>
 
             <TabItem Header="NORA AI">
-                <Grid Margin="18">
+                <Grid Margin="14">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <Border Style="{StaticResource CardBorder}" Padding="18" Margin="0,0,0,12">
+                    <Border Style="{StaticResource CardBorder}" Padding="16" Margin="0,0,0,10">
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="NORA DJ ASSISTANT" Style="{StaticResource SectionTitle}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="NORA DJ COPILOT" Style="{StaticResource SectionTitle}"/>
+                                    <TextBlock Text="  ·  " Style="{StaticResource HelpText}"/>
+                                    <TextBlock Text="{Binding NoraSetStatus, Mode=OneWay}" FontWeight="Bold"/>
+                                </StackPanel>
                                 <TextBlock Text="{Binding NoraCurrentTrack, Mode=OneWay}" FontSize="17" FontWeight="Bold" Margin="0,6,0,2"/>
                                 <TextBlock Text="{Binding NoraStatus, Mode=OneWay}" Style="{StaticResource HelpText}" TextWrapping="Wrap"/>
                             </StackPanel>
-                            <Button Grid.Column="1" Content="AGGIORNA SUGGERIMENTI" Command="{Binding RefreshNoraCommand}" Style="{StaticResource PrimaryButton}" VerticalAlignment="Center"/>
+                            <WrapPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0">
+                                <Button Content="AGGIORNA" Command="{Binding RefreshNoraCommand}" Style="{StaticResource PrimaryButton}"/>
+                                <Button Content="NUOVO SET" Command="{Binding NewNoraSetCommand}" Style="{StaticResource SmallButton}"/>
+                                <Button Content="{Binding NoraPauseResumeLabel, Mode=OneWay}" Command="{Binding PauseResumeNoraSetCommand}" Style="{StaticResource SmallButton}"/>
+                                <Button Content="CHIUDI SET" Command="{Binding CloseNoraSetCommand}" Style="{StaticResource SmallButton}"/>
+                            </WrapPanel>
                         </Grid>
                     </Border>
-                    <TextBlock Grid.Row="1" Text="Classifica le tracce conosciute usando compatibilità BPM (anche half/double-time), genere e vicinanza dell'anno. PRONTA indica che il file è già caricabile da Mix Studio." Style="{StaticResource HelpText}" TextWrapping="Wrap" Margin="0,0,0,10"/>
-                    <DataGrid Grid.Row="2" ItemsSource="{Binding NoraRecommendations, Mode=OneWay}" IsReadOnly="True" AutoGenerateColumns="False">
+                    <Border Grid.Row="1" Style="{StaticResource CardBorder}" Padding="10" Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock Text="PIANO ADATTIVO · PROSSIME 3 TRACCE" FontWeight="Bold" Margin="0,0,0,6"/>
+                            <ItemsControl ItemsSource="{Binding NoraSetPlan, Mode=OneWay}">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Rows="1"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="#30445B" BorderThickness="1" CornerRadius="5" Padding="10" Margin="3">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Position, Mode=OneWay, StringFormat=STEP {0}}" FontWeight="Bold"/>
+                                                <TextBlock Text="{Binding Track.Title, Mode=OneWay}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Track.Artist, Mode=OneWay}" Style="{StaticResource HelpText}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding PairScore, Mode=OneWay, StringFormat=MATCH {0:0}%}" Style="{StaticResource HelpText}"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                    <DataGrid Grid.Row="2" ItemsSource="{Binding NoraRecommendations, Mode=OneWay}" IsReadOnly="True" AutoGenerateColumns="False"
+                              RowDetailsVisibilityMode="VisibleWhenSelected" HorizontalScrollBarVisibility="Auto">
                         <DataGrid.CellStyle>
                             <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
                                 <Setter Property="ClipToBounds" Value="True"/>
                             </Style>
                         </DataGrid.CellStyle>
+                        <DataGrid.RowDetailsTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="12,5,12,10">
+                                    <TextBlock Text="{Binding FactorBreakdown, Mode=OneWay}" TextWrapping="Wrap"/>
+                                    <WrapPanel Margin="0,7,0,0">
+                                        <Button Content="ECCELLENTE" Command="{Binding DataContext.NoraExcellentCommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" CommandParameter="{Binding}" Style="{StaticResource SmallButton}"/>
+                                        <Button Content="NON ADATTA" Command="{Binding DataContext.NoraNotSuitableCommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" CommandParameter="{Binding}" Style="{StaticResource SmallButton}"/>
+                                        <Button Content="TROPPO ENERGICA" Command="{Binding DataContext.NoraTooEnergeticCommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" CommandParameter="{Binding}" Style="{StaticResource SmallButton}"/>
+                                        <Button Content="TROPPO LENTA" Command="{Binding DataContext.NoraTooSlowCommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" CommandParameter="{Binding}" Style="{StaticResource SmallButton}"/>
+                                        <Button Content="EVITA ARTISTA" Command="{Binding DataContext.NoraAvoidArtistCommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" CommandParameter="{Binding}" Style="{StaticResource SmallButton}"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGrid.RowDetailsTemplate>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="#" Binding="{Binding Position, Mode=OneWay}" Width="45"/>
                             <DataGridTextColumn Header="TITOLO" Binding="{Binding Title, Mode=OneWay}" Width="250"/>
                             <DataGridTextColumn Header="ARTISTA" Binding="{Binding Artist, Mode=OneWay}" Width="180"/>
                             <DataGridTextColumn Header="BPM" Binding="{Binding Bpm, Mode=OneWay}" Width="70"/>
-                            <DataGridTextColumn Header="ANNO" Binding="{Binding Year, Mode=OneWay}" Width="70"/>
-                            <DataGridTextColumn Header="GENERE" Binding="{Binding Genre, Mode=OneWay}" Width="130"/>
-                            <DataGridTextColumn Header="MATCH" Binding="{Binding Compatibility, Mode=OneWay}" Width="80"/>
-                            <DataGridTextColumn Header="PERCHÉ" Binding="{Binding Explanation, Mode=OneWay}" Width="280"/>
-                            <DataGridTemplateColumn Header="AZIONE" Width="130">
+                            <DataGridTextColumn Header="KEY" Binding="{Binding Camelot, Mode=OneWay}" Width="60"/>
+                            <DataGridTextColumn Header="ENERGIA" Binding="{Binding Energy, Mode=OneWay}" Width="70"/>
+                            <DataGridTextColumn Header="LUFS" Binding="{Binding Lufs, Mode=OneWay}" Width="82"/>
+                            <DataGridTextColumn Header="VOCE" Binding="{Binding Vocal, Mode=OneWay}" Width="95"/>
+                            <DataGridTextColumn Header="PITCH" Binding="{Binding Pitch, Mode=OneWay}" Width="70"/>
+                            <DataGridTextColumn Header="MATCH" Binding="{Binding Compatibility, Mode=OneWay}" Width="65"/>
+                            <DataGridTextColumn Header="CONF." Binding="{Binding Confidence, Mode=OneWay}" Width="60"/>
+                            <DataGridTextColumn Header="DECK" Binding="{Binding RecommendedDeck, Mode=OneWay}" Width="55"/>
+                            <DataGridTextColumn Header="MIX" Binding="{Binding Mix, Mode=OneWay}" Width="120"/>
+                            <DataGridTextColumn Header="RISCHIO" Binding="{Binding Risk, Mode=OneWay}" Width="72"/>
+                            <DataGridTemplateColumn Header="AZIONI DJ" Width="250">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="{Binding Availability, Mode=OneWay}"
-                                                IsEnabled="{Binding IsAvailableLocally, Mode=OneWay}"
-                                                Command="{Binding DataContext.LoadNoraSuggestionCommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
-                                                CommandParameter="{Binding}" Style="{StaticResource SmallButton}"/>
+                                        <WrapPanel>
+                                            <Button Content="CARICA" IsEnabled="{Binding IsAvailableLocally, Mode=OneWay}" Command="{Binding DataContext.LoadNoraSuggestionCommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" CommandParameter="{Binding}" Style="{StaticResource SmallButton}"/>
+                                            <Button Content="CUFFIA" IsEnabled="{Binding IsAvailableLocally, Mode=OneWay}" Command="{Binding DataContext.PreviewNoraSuggestionCommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" CommandParameter="{Binding}" Style="{StaticResource SmallButton}"/>
+                                            <Button Content="TRANSIZIONE" Command="{Binding DataContext.ShowNoraTransitionCommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" CommandParameter="{Binding}" Style="{StaticResource SmallButton}"/>
+                                        </WrapPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
+                    <Border Grid.Row="3" Style="{StaticResource CardBorder}" Padding="10" Margin="0,10,0,0">
+                        <TextBlock Text="{Binding NoraTransitionDetail, Mode=OneWay}" TextWrapping="Wrap"/>
+                    </Border>
                 </Grid>
             </TabItem>
 

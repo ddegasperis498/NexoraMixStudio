@@ -6,3 +6,6 @@
 *.nexmix
 artifacts/
 .artifacts/
+graphify-out/
+publish/
+results/

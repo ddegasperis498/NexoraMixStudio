@@ -1,5 +1,19 @@
 # Changelog
 
+## 8.18.0 — Nora DJ Copilot adattiva
+
+- Analisi audio v4 con BPM, Camelot, energia, danceability, stime loudness/peak e cache incrementale.
+- Ranking Top 8 multi-fattore, spiegabile, deterministico e consapevole dei dati mancanti.
+- Catalogo SQLite indicizzato con FileInstances reali e benchmark da 50.000 tracce.
+- Selezione della traccia realmente udibile tramite stato deck, meter, master e crossfader.
+- Personalizzazione locale persistente con feedback, decay, profili, reset ed export/import.
+- Memoria persistente del set, fasi energetiche, planner di tre tracce e alternative.
+- Transition advisor con deck, pitch, cue, durata, bass swap, rischio e confidenza.
+- Preview isolata sul bus cuffia e caricamento senza play/sync/master automatici.
+- UI Nora professionale con piano, dettagli, controlli sessione e feedback.
+- Rimosse le dipendenze assolute dai repository sibling; aggiunti SDK pin, CI Windows e publish win-x64.
+- Aggiornato SQLite nativo alla versione 2.1.12 per rimuovere la segnalazione NU1903.
+
 ## 8.0.0 — Tablet Console Edition
 
 - Interfaccia Windows ridisegnata in schede chiare.

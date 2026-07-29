@@ -143,6 +143,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             if (!SetProperty(ref _crossfader, Math.Clamp(value, -1d, 1d))) return;
             _audioEngine.SetCrossfader(_crossfader);
+            ScheduleNoraRefresh();
         }
     }
 
@@ -626,16 +627,28 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             track.DetectedBeatCount = result.DetectedBeatCount;
             track.EstimatedBarCount = result.EstimatedBarCount;
             track.AverageBeatIntervalSeconds = result.AverageBeatIntervalSeconds;
+            track.AudioFeatures = result.Features;
             track.IsAnalyzed = true;
-            track.AnalysisVersion = 3;
+            track.AnalysisVersion = result.Features.AnalysisVersion;
+            var advancedSummary = result.Features.Status == AudioFeatureAnalysisStatus.Unknown
+                ? string.Empty
+                : $" · {track.CamelotKeyText} · energia {track.EnergyText} · {track.LoudnessText}";
             track.AnalysisStatus = result.Bpm > 0
-                ? $"Pronta{(loadedFromCache ? " da cache" : string.Empty)} · {result.Bpm:0.0} BPM · {result.DetectedBeatCount} battute · {result.EstimatedBarCount} misure"
-                : "Waveform pronta · BPM da correggere o usare TAP BPM";
+                ? $"Pronta{(loadedFromCache ? " da cache" : string.Empty)} · {result.Bpm:0.0} BPM · {result.DetectedBeatCount} battute · {result.EstimatedBarCount} misure{advancedSummary}"
+                : $"Waveform pronta · BPM da correggere o usare TAP BPM{advancedSummary}";
         }
         catch (Exception ex)
         {
             AppLog.Error(ex, $"Analisi {track.FilePath}");
             track.IsAnalyzed = false;
+            track.AnalysisVersion = TrackAudioFeatures.CurrentAnalysisVersion;
+            track.AudioFeatures = new TrackAudioFeatures
+            {
+                Status = AudioFeatureAnalysisStatus.Failed,
+                AnalysisVersion = TrackAudioFeatures.CurrentAnalysisVersion,
+                AnalyzedAtUtc = DateTimeOffset.UtcNow,
+                AnalysisError = ex.Message
+            };
             track.AnalysisStatus = $"Errore decoder/analisi: {ex.Message}";
         }
         finally { track.IsAnalyzing = false; }
@@ -724,6 +737,42 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             AppLog.Error(ex, $"Caricamento Deck {deck.Name}");
             Status = $"Impossibile caricare il Deck {deck.Name}.";
             MessageBox.Show(ex.Message, "Nexora Mix Studio", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    public bool LoadTrackToDeckOnly(AudioTrack? track, DeckViewModel deck)
+    {
+        ArgumentNullException.ThrowIfNull(deck);
+        if (track is null)
+        {
+            Status = "Nora non ha indicato una traccia da caricare.";
+            return false;
+        }
+
+        if (!track.CanLoadToDeck)
+        {
+            Status = "Il suggerimento di Nora non dispone di un file locale caricabile.";
+            return false;
+        }
+
+        if (deck.IsPlaying)
+        {
+            Status = $"Il Deck {deck.Name} sta suonando: caricamento Nora annullato per sicurezza.";
+            return false;
+        }
+
+        try
+        {
+            SelectedTrack = track;
+            deck.Load(track);
+            Status = $"{track.Title} caricata sul Deck {deck.Name}, pronta ma non avviata.";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error(ex, $"Caricamento passivo Nora Deck {deck.Name}");
+            Status = $"Impossibile caricare il suggerimento sul Deck {deck.Name}.";
+            return false;
         }
     }
 
@@ -996,7 +1045,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 }
 
                 BusyMessage = $"Analisi demo · {track.Title}";
-                if (!track.IsAnalyzed || track.AnalysisVersion < 3 || track.Waveform.Length == 0 || track.DetectedBeatCount == 0) await AnalyzeTrackAsync(track);
+                if (!track.IsAnalyzed || track.AnalysisVersion < TrackAudioFeatures.CurrentAnalysisVersion || track.Waveform.Length == 0 || track.DetectedBeatCount == 0) await AnalyzeTrackAsync(track);
                 demoTracks.Add(track);
             }
 

@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using NexoraMix.Audio.Analysis;
+using NexoraMix.Core.Models;
 using IOFile = System.IO.File;
 using IOPath = System.IO.Path;
 using IODirectory = System.IO.Directory;
@@ -11,24 +12,21 @@ namespace NexoraMix.App.Services;
 
 public sealed class AnalysisCacheStore
 {
-    private const int AnalyzerVersion = 3;
+    private const int AnalyzerVersion = TrackAudioFeatures.CurrentAnalysisVersion;
+    private readonly string _cacheFolder;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = false,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    private static string CacheFolder
+    public AnalysisCacheStore(string? cacheFolder = null)
     {
-        get
-        {
-            var folder = IOPath.Combine(
+        _cacheFolder = cacheFolder ?? IOPath.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "NexoraMix",
                 "AnalysisCache");
-            IODirectory.CreateDirectory(folder);
-            return folder;
-        }
+        IODirectory.CreateDirectory(_cacheFolder);
     }
 
     public async Task<AudioAnalysisResult?> TryLoadAsync(string audioPath, CancellationToken cancellationToken = default)
@@ -41,9 +39,14 @@ public sealed class AnalysisCacheStore
         {
             await using var stream = IOFile.OpenRead(cachePath);
             var entry = await JsonSerializer.DeserializeAsync<CacheEntry>(stream, JsonOptions, cancellationToken);
-            return entry is not null && entry.Fingerprint == CreateFingerprint(audioPath)
-                ? entry.Analysis
-                : null;
+            if (entry is not null &&
+                entry.Fingerprint == CreateFingerprint(audioPath) &&
+                entry.Analysis.Features.AnalysisVersion == AnalyzerVersion &&
+                entry.Analysis.Features.Status is AudioFeatureAnalysisStatus.Analyzed or AudioFeatureAnalysisStatus.Partial)
+                return entry.Analysis;
+
+            TryDelete(cachePath);
+            return null;
         }
         catch (JsonException)
         {
@@ -66,6 +69,9 @@ public sealed class AnalysisCacheStore
         CancellationToken cancellationToken = default)
     {
         if (!IOFile.Exists(audioPath)) return;
+        if (analysis.Features.AnalysisVersion != AnalyzerVersion ||
+            analysis.Features.Status is AudioFeatureAnalysisStatus.Unknown or AudioFeatureAnalysisStatus.Failed)
+            return;
         var target = GetCachePath(audioPath);
         var temporary = target + ".tmp";
         var entry = new CacheEntry(CreateFingerprint(audioPath), DateTimeOffset.UtcNow, analysis);
@@ -92,11 +98,11 @@ public sealed class AnalysisCacheStore
         }
     }
 
-    private static string GetCachePath(string audioPath)
+    private string GetCachePath(string audioPath)
     {
         var fingerprint = CreateFingerprint(audioPath);
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(fingerprint)));
-        return IOPath.Combine(CacheFolder, hash + ".json");
+        return IOPath.Combine(_cacheFolder, hash + ".json");
     }
 
     private static string CreateFingerprint(string audioPath)

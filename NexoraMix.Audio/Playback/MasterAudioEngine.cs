@@ -17,6 +17,7 @@ public sealed class MasterAudioEngine : IDisposable
     private readonly MasterLimiterSampleProvider _limiter;
     private readonly RecordingSampleProvider _recorder;
     private readonly AudioTapSampleProvider _masterTap;
+    private readonly PreviewChannel _preview;
     private readonly CueMixSampleProvider _cueMix;
     private readonly ClockedSampleProvider _clockedOutput;
     private readonly SamplerEngine _sampler;
@@ -52,7 +53,8 @@ public sealed class MasterAudioEngine : IDisposable
         _recorder = new RecordingSampleProvider(_limiter);
         _masterTap = new AudioTapSampleProvider(_recorder);
         _clockedOutput = new ClockedSampleProvider(_masterTap, _clock);
-        _cueMix = new CueMixSampleProvider(WaveFormat, _decks, _masterTap);
+        _preview = new PreviewChannel(WaveFormat);
+        _cueMix = new CueMixSampleProvider(WaveFormat, _decks, _masterTap, _preview);
         SetCrossfader(0);
     }
 
@@ -75,6 +77,11 @@ public sealed class MasterAudioEngine : IDisposable
     public SamplerEngine Sampler => _sampler;
     public double CueVolume { get => _cueMix.Volume; set => _cueMix.Volume = value; }
     public bool MasterCueEnabled { get => _cueMix.MasterCueEnabled; set => _cueMix.MasterCueEnabled = value; }
+    public AudioTrack? PreviewTrack => _preview.Track;
+    public PreviewPlaybackState PreviewState => _preview.State;
+    public bool IsPreviewPlaying => _preview.IsPlaying;
+    public double PreviewPositionSeconds => _preview.PositionSeconds;
+    public Exception? LastPreviewError => _preview.LastError;
 
     public DeckChannel GetDeck(DeckId id) => _decks[id];
 
@@ -92,10 +99,28 @@ public sealed class MasterAudioEngine : IDisposable
     public void Pause(DeckId id) => GetDeck(id).Pause();
     public void Stop(DeckId id) => GetDeck(id).Stop();
 
+    public void LoadPreview(AudioTrack track, double seconds)
+    {
+        ThrowIfDisposed();
+        _preview.Load(track, seconds);
+    }
+
+    public void PlayPreview(bool startCueOutput = true)
+    {
+        ThrowIfDisposed();
+        _preview.Play();
+        if (startCueOutput) EnsureCueOutputStarted();
+    }
+
+    public void PausePreview() => _preview.Pause();
+    public void StopPreview() => _preview.Stop();
+    public void UnloadPreview() => _preview.Unload();
+
     public void StopAll()
     {
         foreach (var deck in _decks.Values) deck.Stop();
         _sampler.StopAll();
+        _preview.Stop();
     }
 
     public void SetDeckSide(DeckId id, DeckSide side)
@@ -396,6 +421,12 @@ public sealed class MasterAudioEngine : IDisposable
         return _clockedOutput.Read(buffer, offset, count);
     }
 
+    public int RenderCueOffline(float[] buffer, int offset, int count)
+    {
+        ThrowIfDisposed();
+        return _cueMix.Read(buffer, offset, count);
+    }
+
     private void EnsureOutputStarted()
     {
         lock (_outputGate)
@@ -494,6 +525,7 @@ public sealed class MasterAudioEngine : IDisposable
             _recorder.Dispose();
             foreach (var deck in _decks.Values) deck.Dispose();
             DisposeOutputUnsafe();
+            _preview.Dispose();
         }
         GC.SuppressFinalize(this);
     }

@@ -191,3 +191,27 @@
 - Controller test + Nora compatibility: PASS in Debug e Release.
 - Avvio WPF Release: PASS, finestra stabile dopo 8 secondi e nessun nuovo errore nel log.
 - Controllo visivo Windows: PASS per presenza e apertura della scheda `NORA AI`; verificata connessione reale a 43.214 tracce catalogate e 100 insegnamenti condivisi nell'ambiente corrente.
+
+## Fase 8.18 — Nora DJ Copilot adattiva e professionale
+
+- Sostituita l'integrazione iniziale tramite ProjectReference esterni con un'implementazione autonoma e riproducibile nel repository.
+- Aggiunte feature audio v4, cache versionata, Camelot, ranking strutturato, FileInstances e query SQLite indicizzate.
+- Aggiunti apprendimento persistente, profili, memoria del set, fasi energetiche, planner di tre tracce e transition advisor.
+- Collegata Nora allo stato reale dei deck; il caricamento usa soltanto deck vuoti e non avvia play, sync o master.
+- Aggiunta preview locale esclusiva sul cue, con test offline che verifica master silenzioso.
+- Ricostruita la scheda Nora con Top 8, piano, dettagli, feedback e comandi della sessione.
+- Corretto il caso sessione in pausa: lo stato resta visibile senza registrare falsi eventi “suonata”.
+- Aggiunti pin SDK, build fail-fast, CI Windows, publish win-x64 e scan contro riferimenti assoluti.
+- Graphify finale eseguito in modalità code-only: 133 file, 1.763 nodi, 3.578 archi e 96 comunità.
+
+## Verifica 8.18
+
+- `Validate-Project.ps1`: PASS.
+- `Build.ps1 -Configuration Debug`: PASS, 0 errori/warning e suite complete.
+- `Build.ps1 -Configuration Release`: PASS, 0 errori/warning e suite complete.
+- SQLite reale 50.000 tracce: pool limitato a 1.000 risultati, circa 36 ms nell'ultima esecuzione.
+- Publish Release win-x64 framework-dependent: PASS.
+- Scan ProjectReference esterni e percorsi personali nei file progetto: PASS, 0 risultati.
+- `git diff --check`: PASS.
+- Prova visiva WPF Release: PASS; finestra stabile, scheda Nora aperta, stato/piano/Top 8 leggibili e nessun audio avviato.
+- Aggiornamento finale Graphify: PASS.

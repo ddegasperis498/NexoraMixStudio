@@ -3,6 +3,7 @@ using NAudio.Wave;
 using NexoraMix.Audio.Analysis;
 using NexoraMix.Audio.Playback;
 using NexoraMix.Audio.Timecode;
+using NexoraMix.App.Services;
 using NexoraMix.Core.Services;
 using NexoraMix.Core.Models;
 
@@ -46,6 +47,18 @@ Check(Math.Abs(nextPhrase - 8d) < 0.0001d, "Quantizzazione alla frase successiva
 var phaseError = BeatGridMath.PhaseErrorMilliseconds(10d, 0d, 120d, 1d, 10.01d, 0d, 120d, 1d);
 Check(Math.Abs(phaseError - 10d) < 0.2d, "Misura errore fase in millisecondi");
 
+Check(CamelotCompatibilityService.ToCamelot("A", MusicalMode.Minor) == "8A", "Camelot converte A minor in 8A");
+Check(CamelotCompatibilityService.ToCamelot("C", MusicalMode.Major) == "8B", "Camelot converte C major in 8B");
+Check(CamelotCompatibilityService.ToCamelot("Db", MusicalMode.Major) == "3B", "Camelot normalizza le tonalità bemolli");
+Check(CamelotCompatibilityService.ToCamelot(null, MusicalMode.Unknown) is null, "Camelot conserva la tonalità mancante come Unknown");
+Check(CamelotCompatibilityService.Compare("8A", "8A").Relation == CamelotRelation.SameKey, "Camelot riconosce la stessa chiave");
+Check(CamelotCompatibilityService.Compare("8A", "9A").Relation == CamelotRelation.Adjacent, "Camelot riconosce il movimento adiacente");
+Check(CamelotCompatibilityService.Compare("8A", "8B").Relation == CamelotRelation.RelativeMajorMinor, "Camelot riconosce maggiore/minore compatibile");
+Check(CamelotCompatibilityService.Compare("8A", "2B").Relation == CamelotRelation.Incompatible, "Camelot segnala una combinazione incompatibile");
+var unknownFeatures = new TrackAudioFeatures();
+Check(unknownFeatures.Status == AudioFeatureAnalysisStatus.Unknown && unknownFeatures.Energy is null, "Feature mancanti restano Unknown e nullable");
+Check(TrackAudioFeatures.CurrentAnalysisVersion == 4, "Versione analisi avanzata esplicita per invalidare cache precedenti");
+
 var analyzer = new BpmAnalyzer();
 var demoFiles = DemoAudioFactory.EnsureDemoFiles();
 var expectedDemoBpms = new[] { 118d, 124d };
@@ -56,6 +69,41 @@ for (var index = 0; index < Math.Min(demoFiles.Count, expectedDemoBpms.Length); 
     var error = Math.Abs(result.Bpm - expectedDemoBpms[index]);
     Console.WriteLine($"INFO  {Path.GetFileName(demoFiles[index])}: {result.Bpm:0.00} BPM, errore {error:0.00}, confidenza {result.Confidence:P0}");
     Check(error <= 1.0d, $"Rilevamento BPM demo {expectedDemoBpms[index]:0}");
+}
+
+using (var previewEngine = new MasterAudioEngine())
+{
+    var previewTrack = new AudioTrack
+    {
+        Title = "Preview isolata",
+        Artist = "SelfTest",
+        FilePath = demoFiles[0],
+        SourceKind = TrackSourceKind.LocalFile,
+        Bpm = 118d
+    };
+    const double cueSeconds = 0.2d;
+    previewEngine.LoadPreview(previewTrack, cueSeconds);
+    Check(previewEngine.PreviewState == PreviewPlaybackState.Ready, "Preview locale pronta al cue richiesto");
+    Check(previewEngine.Decks.Values.All(deck => deck.Track is null && !deck.IsPlaying), "Preview non carica e non avvia alcun deck");
+
+    previewEngine.PlayPreview(startCueOutput: false);
+    var previewBuffer = new float[previewEngine.SampleRate];
+    var cueRendered = previewEngine.RenderCueOffline(previewBuffer, 0, previewBuffer.Length);
+    var previewPeak = previewBuffer.Take(cueRendered).Select(Math.Abs).DefaultIfEmpty(0f).Max();
+    Check(previewPeak > 0.001f, "Preview produce audio esclusivamente nel render cuffia");
+
+    Array.Clear(previewBuffer);
+    var masterRendered = previewEngine.RenderOffline(previewBuffer, 0, previewBuffer.Length);
+    var isolatedMasterPeak = previewBuffer.Take(masterRendered).Select(Math.Abs).DefaultIfEmpty(0f).Max();
+    Check(isolatedMasterPeak < 0.000001f, "Preview non entra mai nel master");
+    Check(previewEngine.Decks.Values.All(deck => deck.Track is null && !deck.IsPlaying), "Preview resta indipendente dai quattro deck");
+
+    previewEngine.StopPreview();
+    Array.Clear(previewBuffer);
+    previewEngine.RenderCueOffline(previewBuffer, 0, previewBuffer.Length);
+    Check(previewEngine.PreviewState == PreviewPlaybackState.Ready && previewBuffer.All(sample => sample == 0f), "Stop preview silenzia la cuffia e torna al cue");
+    previewEngine.UnloadPreview();
+    Check(previewEngine.PreviewState == PreviewPlaybackState.Empty && previewEngine.PreviewTrack is null, "Unload preview rilascia il file locale");
 }
 
 using (var engine = new MasterAudioEngine())
@@ -297,6 +345,9 @@ var syntheticFolder = Path.Combine(Path.GetTempPath(), "NexoraMix-SelfTest", Gui
 Directory.CreateDirectory(syntheticFolder);
 try
 {
+    var cacheStore = new AnalysisCacheStore(Path.Combine(syntheticFolder, "analysis-cache"));
+    var libraryIndexPath = Path.Combine(syntheticFolder, "library", "music-import-index.json");
+    var cacheLifecycleTested = false;
     foreach (var expectedBpm in new[] { 90d, 100d, 118d, 120d, 124d, 128d, 140d })
     {
         var path = Path.Combine(syntheticFolder, $"click-{expectedBpm:0}.wav");
@@ -308,6 +359,61 @@ try
         Check(error <= 0.55d, $"BPM sintetico {expectedBpm:0} entro ±0,55 BPM");
         Check(Math.Abs(result.DetectedBeatCount - expectedBeats) <= 2, $"Conteggio battute {expectedBpm:0} BPM entro ±2");
         Check(result.EstimatedBarCount == (int)Math.Ceiling(result.DetectedBeatCount / 4d), $"Conteggio misure {expectedBpm:0} BPM coerente");
+        Check(result.Features.Status == AudioFeatureAnalysisStatus.Partial, $"Feature sintetiche {expectedBpm:0} dichiarano analisi parziale");
+        Check(result.Features.AnalysisVersion == TrackAudioFeatures.CurrentAnalysisVersion, $"Feature sintetiche {expectedBpm:0} usano la versione corrente");
+        Check(result.Features.Energy is >= 0d and <= 1d, $"Energia sintetica {expectedBpm:0} normalizzata");
+        Check(result.Features.Danceability is >= 0d and <= 1d, $"Danceability sintetica {expectedBpm:0} normalizzata");
+        Check(result.Features.BassIntensity is >= 0d and <= 1d, $"Intensità basse sintetica {expectedBpm:0} normalizzata");
+        Check(result.Features.SpectralCentroidHz is > 0d, $"Centroide spettrale sintetico {expectedBpm:0} disponibile");
+        Check(result.Features.EstimatedIntegratedLufs is < 0d, $"Stima loudness sintetica {expectedBpm:0} espressa in dB");
+        Check(result.Features.EstimatedTruePeakDbFs >= result.Features.SamplePeakDbFs,
+            $"True peak stimato {expectedBpm:0} non inferiore al sample peak");
+        Check(result.Features.VocalPresence == VocalPresence.Unknown && result.Features.VocalConfidence is null,
+            $"Voce sintetica {expectedBpm:0} non viene inventata");
+        Check(result.Features.MusicalKey is null || result.Features.CamelotKey is not null,
+            $"Tonalità sintetica {expectedBpm:0} ha Camelot coerente o fallback Unknown");
+
+        if (!cacheLifecycleTested)
+        {
+            await cacheStore.SaveAsync(path, result);
+            var cacheHit = await cacheStore.TryLoadAsync(path);
+            Check(cacheHit?.Features.AnalysisVersion == TrackAudioFeatures.CurrentAnalysisVersion,
+                "Cache reale restituisce un hit con feature v4");
+            Check(cacheHit?.Features.Energy == result.Features.Energy,
+                "Cache reale conserva le feature audio avanzate");
+
+            var persistedTrack = new AudioTrack
+            {
+                FilePath = path,
+                SourceKind = TrackSourceKind.LocalFile,
+                Title = "Cache Track",
+                Artist = "SelfTest",
+                DurationSeconds = result.DurationSeconds,
+                Bpm = result.Bpm,
+                AudioFeatures = result.Features,
+                AnalysisVersion = result.Features.AnalysisVersion,
+                IsAnalyzed = true
+            };
+            new MusicImportIndexStore(libraryIndexPath).SaveTrack(persistedTrack);
+            var restoredTrack = new MusicImportIndexStore(libraryIndexPath).TryCreateTrack(path);
+            Check(restoredTrack is not null &&
+                  restoredTrack.AudioFeatures.Energy == result.Features.Energy &&
+                  restoredTrack.AnalysisVersion == TrackAudioFeatures.CurrentAnalysisVersion,
+                "Indice libreria conserva e ripristina TrackAudioFeatures v4");
+
+            File.SetLastWriteTimeUtc(path, File.GetLastWriteTimeUtc(path).AddSeconds(2));
+            Check(await cacheStore.TryLoadAsync(path) is null,
+                "Cache reale invalida il file modificato");
+
+            var staleResult = result with
+            {
+                Features = result.Features with { AnalysisVersion = TrackAudioFeatures.CurrentAnalysisVersion - 1 }
+            };
+            await cacheStore.SaveAsync(path, staleResult);
+            Check(await cacheStore.TryLoadAsync(path) is null,
+                "Cache reale rifiuta feature di una versione precedente");
+            cacheLifecycleTested = true;
+        }
     }
 }
 finally
