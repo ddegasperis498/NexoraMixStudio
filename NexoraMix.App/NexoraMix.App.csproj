@@ -21,8 +21,6 @@
   <ItemGroup>
     <ProjectReference Include="..\NexoraMix.Core\NexoraMix.Core.csproj" />
     <ProjectReference Include="..\NexoraMix.Audio\NexoraMix.Audio.csproj" />
-    <ProjectReference Include="..\..\Nexora.AI\src\Nexora.AI.Embedded\Nexora.AI.Embedded.csproj" />
-    <ProjectReference Include="..\..\..\PuliziaSpazioDev\Nexora.MusicIntelligence.Catalog\Nexora.MusicIntelligence.Catalog.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\DemoAudio\*.wav" Link="DemoAudio\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
@@ -41,6 +39,8 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.10" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.12" />
   </ItemGroup>
 </Project>

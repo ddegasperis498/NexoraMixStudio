@@ -12,9 +12,13 @@ public sealed class MusicImportIndexStore
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     private readonly object _gate = new();
     private readonly Dictionary<string, MusicImportRecord> _records;
+    private readonly string _indexPath;
 
-    public MusicImportIndexStore()
+    public MusicImportIndexStore(string? indexPath = null)
     {
+        _indexPath = indexPath ?? DefaultIndexPath;
+        var folder = IOPath.GetDirectoryName(_indexPath);
+        if (!string.IsNullOrWhiteSpace(folder)) IODirectory.CreateDirectory(folder);
         _records = LoadRecords()
             .GroupBy(record => record.Fingerprint, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
@@ -51,7 +55,7 @@ public sealed class MusicImportIndexStore
         }
     }
 
-    private static string IndexPath
+    private static string DefaultIndexPath
     {
         get
         {
@@ -74,12 +78,12 @@ public sealed class MusicImportIndexStore
             info.LastWriteTimeUtc.Ticks);
     }
 
-    private static List<MusicImportRecord> LoadRecords()
+    private List<MusicImportRecord> LoadRecords()
     {
         try
         {
-            if (!IOFile.Exists(IndexPath)) return new List<MusicImportRecord>();
-            return JsonSerializer.Deserialize<List<MusicImportRecord>>(IOFile.ReadAllText(IndexPath), JsonOptions)
+            if (!IOFile.Exists(_indexPath)) return new List<MusicImportRecord>();
+            return JsonSerializer.Deserialize<List<MusicImportRecord>>(IOFile.ReadAllText(_indexPath), JsonOptions)
                    ?? new List<MusicImportRecord>();
         }
         catch (JsonException)
@@ -98,12 +102,12 @@ public sealed class MusicImportIndexStore
 
     private void SaveRecords()
     {
-        var temporary = IndexPath + ".tmp";
+        var temporary = _indexPath + ".tmp";
         var records = _records.Values.OrderBy(record => record.FilePath, StringComparer.OrdinalIgnoreCase).ToList();
         try
         {
             IOFile.WriteAllText(temporary, JsonSerializer.Serialize(records, JsonOptions));
-            IOFile.Move(temporary, IndexPath, overwrite: true);
+            IOFile.Move(temporary, _indexPath, overwrite: true);
         }
         finally
         {
@@ -126,6 +130,7 @@ public sealed class MusicImportIndexStore
         int DetectedBeatCount,
         int EstimatedBarCount,
         double AverageBeatIntervalSeconds,
+        TrackAudioFeatures? AudioFeatures,
         DateTimeOffset ImportedAtUtc)
     {
         public static MusicImportRecord FromTrack(string fingerprint, AudioTrack track) =>
@@ -144,6 +149,7 @@ public sealed class MusicImportIndexStore
                 track.DetectedBeatCount,
                 track.EstimatedBarCount,
                 track.AverageBeatIntervalSeconds,
+                track.AudioFeatures,
                 DateTimeOffset.UtcNow);
 
         public AudioTrack ToTrack(string currentPath) =>
@@ -163,8 +169,9 @@ public sealed class MusicImportIndexStore
                 DetectedBeatCount = DetectedBeatCount,
                 EstimatedBarCount = EstimatedBarCount,
                 AverageBeatIntervalSeconds = AverageBeatIntervalSeconds,
+                AudioFeatures = AudioFeatures ?? new TrackAudioFeatures(),
                 IsAnalyzed = Bpm > 0 || DurationSeconds > 0,
-                AnalysisVersion = 3,
+                AnalysisVersion = AudioFeatures?.AnalysisVersion ?? 3,
                 AnalysisStatus = Bpm > 0
                     ? $"Gia riconosciuta · {Bpm:0.0} BPM · {DetectedBeatCount} battute"
                     : "Gia riconosciuta · analisi disponibile al caricamento"

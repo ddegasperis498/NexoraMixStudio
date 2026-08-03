@@ -27,6 +27,7 @@ public sealed class AudioTrack : ObservableObject
     private double _averageBeatIntervalSeconds;
     private TrackSourceKind _sourceKind = TrackSourceKind.LocalFile;
     private bool _isMashupSelected;
+    private TrackAudioFeatures _audioFeatures = new();
 
     public Guid Id { get; set; } = Guid.NewGuid();
     public TrackSourceKind SourceKind
@@ -48,6 +49,22 @@ public sealed class AudioTrack : ObservableObject
     public string? ArtworkUrl { get; set; }
     public string? Isrc { get; set; }
     public int AnalysisVersion { get; set; } = 3;
+    public TrackAudioFeatures AudioFeatures
+    {
+        get => _audioFeatures;
+        set
+        {
+            if (!SetProperty(ref _audioFeatures, value ?? new TrackAudioFeatures())) return;
+            RaisePropertyChanged(nameof(MusicalKeyText));
+            RaisePropertyChanged(nameof(CamelotKeyText));
+            RaisePropertyChanged(nameof(EnergyText));
+            RaisePropertyChanged(nameof(LoudnessText));
+            RaisePropertyChanged(nameof(TruePeakText));
+            RaisePropertyChanged(nameof(DanceabilityText));
+            RaisePropertyChanged(nameof(VocalPresenceText));
+            RaisePropertyChanged(nameof(AdvancedAnalysisSummaryText));
+        }
+    }
     public bool IsMashupSelected { get => _isMashupSelected; set => SetProperty(ref _isMashupSelected, value); }
 
     public string Title { get => _title; set => SetProperty(ref _title, value); }
@@ -136,6 +153,40 @@ public sealed class AudioTrack : ObservableObject
 
     [JsonIgnore]
     public string BarCountText => EstimatedBarCount > 0 ? EstimatedBarCount.ToString() : "—";
+
+    [JsonIgnore]
+    public string MusicalKeyText => AudioFeatures.MusicalKey is null
+        ? "—"
+        : $"{AudioFeatures.MusicalKey} {AudioFeatures.MusicalMode}";
+
+    [JsonIgnore]
+    public string CamelotKeyText => AudioFeatures.CamelotKey ?? "—";
+
+    [JsonIgnore]
+    public string EnergyText => AudioFeatures.Energy is double value ? $"{value:P0}" : "—";
+
+    [JsonIgnore]
+    public string LoudnessText => AudioFeatures.EstimatedIntegratedLufs is double value ? $"{value:0.0} LUFS stimati" : "—";
+
+    [JsonIgnore]
+    public string TruePeakText => AudioFeatures.EstimatedTruePeakDbFs is double value ? $"{value:0.0} dBTP stimati" : "—";
+
+    [JsonIgnore]
+    public string DanceabilityText => AudioFeatures.Danceability is double value ? $"{value:P0}" : "—";
+
+    [JsonIgnore]
+    public string VocalPresenceText => AudioFeatures.VocalPresence == VocalPresence.Unknown
+        ? "Non determinata"
+        : AudioFeatures.VocalPresence.ToString();
+
+    [JsonIgnore]
+    public string AdvancedAnalysisSummaryText => AudioFeatures.Status switch
+    {
+        AudioFeatureAnalysisStatus.Analyzed => $"{CamelotKeyText} · energia {EnergyText} · {LoudnessText}",
+        AudioFeatureAnalysisStatus.Partial => $"Analisi parziale · {CamelotKeyText} · energia {EnergyText}",
+        AudioFeatureAnalysisStatus.Failed => $"Analisi avanzata non riuscita · {AudioFeatures.AnalysisError}",
+        _ => "Analisi avanzata non disponibile"
+    };
 
     [JsonIgnore]
     public string SourceDisplay => CanLoadToDeck

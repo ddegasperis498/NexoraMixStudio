@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-build-test-publish:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pinned .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Create result folders
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force results, publish | Out-Null
+
+      - name: Reject external project references and user paths
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = [IO.Path]::GetFullPath($env:GITHUB_WORKSPACE).TrimEnd('\') + '\'
+          $files = Get-ChildItem $root -Recurse -File -Include *.csproj,*.props,*.targets |
+            Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' }
+          foreach ($file in $files) {
+            $content = Get-Content $file.FullName -Raw
+            if ($content -match '[A-Za-z]:[\\/]Users[\\/]') {
+              throw "Percorso utente assoluto rilevato in $($file.FullName)"
+            }
+            if ($file.Extension -ne '.csproj') { continue }
+            [xml]$project = $content
+            foreach ($reference in $project.SelectNodes('//ProjectReference')) {
+              $resolved = [IO.Path]::GetFullPath((Join-Path $file.DirectoryName $reference.Include))
+              if (-not $resolved.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) {
+                throw "ProjectReference esterno: $($file.FullName) -> $resolved"
+              }
+            }
+          }
+          "Controllati $($files.Count) file progetto: nessun riferimento esterno." |
+            Tee-Object -FilePath results\dependency-scan.log
+
+      - name: Restore
+        shell: pwsh
+        run: |
+          & dotnet restore .\NexoraMixStudio.sln 2>&1 |
+            Tee-Object -FilePath results\restore.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Static validation
+        shell: pwsh
+        run: |
+          & powershell -NoProfile -ExecutionPolicy Bypass -File .\Validate-Project.ps1 2>&1 |
+            Tee-Object -FilePath results\validate.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Debug build and mandatory suites
+        shell: pwsh
+        run: |
+          try {
+            & .\Build.ps1 -Configuration Debug 2>&1 |
+              Tee-Object -FilePath results\debug.log
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } catch {
+            $_ | Out-String | Tee-Object -FilePath results\debug.log -Append
+            throw
+          }
+
+      - name: Release build and mandatory suites
+        shell: pwsh
+        run: |
+          try {
+            & .\Build.ps1 -Configuration Release 2>&1 |
+              Tee-Object -FilePath results\release.log
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } catch {
+            $_ | Out-String | Tee-Object -FilePath results\release.log -Append
+            throw
+          }
+
+      - name: Publish win-x64 folder and zip
+        shell: pwsh
+        run: |
+          & dotnet restore .\NexoraMix.App\NexoraMix.App.csproj -r win-x64 2>&1 |
+            Tee-Object -FilePath results\publish.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & dotnet publish .\NexoraMix.App\NexoraMix.App.csproj -c Release -r win-x64 `
+            --self-contained false --no-restore -p:PublishSingleFile=false `
+            -o .\publish\win-x64 2>&1 | Tee-Object -FilePath results\publish.log -Append
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Compress-Archive -Path .\publish\win-x64\* `
+            -DestinationPath .\publish\NexoraMixStudio-win-x64.zip -Force
+
+      - name: Upload CI logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-logs
+          path: results/
+          if-no-files-found: error
+
+      - name: Upload win-x64 application
+        uses: actions/upload-artifact@v4
+        with:
+          name: NexoraMixStudio-win-x64
+          path: |
+            publish/win-x64/
+            publish/NexoraMixStudio-win-x64.zip
+          if-no-files-found: error

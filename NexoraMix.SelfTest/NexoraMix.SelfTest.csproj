@@ -11,6 +11,10 @@
     <ProjectReference Include="..\NexoraMix.Audio\NexoraMix.Audio.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\NexoraMix.App\Services\AnalysisCacheStore.cs" Link="Services\AnalysisCacheStore.cs" />
+    <Compile Include="..\NexoraMix.App\Services\MusicImportIndexStore.cs" Link="Services\MusicImportIndexStore.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="NAudio" Version="2.3.0" />
   </ItemGroup>
 </Project>

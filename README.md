@@ -9,6 +9,18 @@ Nexora Mix Studio V8 è una soluzione Visual Studio `.NET 8` composta da:
 - interfaccia browser apribile anche sul monitor del PC;
 - cartella Musica controllata automaticamente.
 
+> L'app desktop è attualmente su `net10.0-windows`; Core e motore audio conservano i rispettivi target .NET 8. Lo SDK riproducibile è fissato in `global.json`.
+
+## Nora DJ Copilot
+
+La scheda **NORA AI** riconosce la traccia realmente udibile e propone Top 8 e un piano di tre tracce usando BPM, pitch, Camelot, energia, genere, anno, disponibilità del file, memoria recente e preferenze apprese.
+
+Nora mostra spiegazione, confidenza, deck, cue di ingresso/uscita, durata del mix, bass swap e rischio. Può caricare una traccia solo su un deck completamente libero e può riprodurre una preview esclusivamente in cuffia; non avvia mai il master o il play al posto del DJ.
+
+L'apprendimento e la memoria del set sono locali, persistenti, resettabili e separati per profilo/sessione. Il progetto compila senza dipendere dalle cartelle esterne `Nexora.AI` e `PuliziaSpazioDev`.
+
+Documentazione: [architettura](docs/NORA_ARCHITECTURE.md), [analisi audio](docs/NORA_AUDIO_ANALYSIS.md), [ranking](docs/NORA_RANKING.md), [personalizzazione](docs/NORA_PERSONALIZATION.md), [planner](docs/NORA_SET_PLANNER.md), [transizioni](docs/NORA_TRANSITION_ADVISOR.md), [database](docs/NORA_DATABASE.md), [prestazioni](docs/NORA_PERFORMANCE.md), [deployment](docs/NORA_DEPLOYMENT.md) e [rapporto test](docs/NORA_TEST_REPORT.md).
+
 ## Architettura
 
 Il PC resta l'unica sorgente audio e mantiene il clock dei quattro deck. Tablet e browser inviano comandi al PC e ricevono stato, waveform, BPM, posizione, meter, Sync ed effetti tramite WebSocket.

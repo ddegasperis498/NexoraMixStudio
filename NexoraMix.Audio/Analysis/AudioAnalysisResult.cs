@@ -1,3 +1,5 @@
+using NexoraMix.Core.Models;
+
 namespace NexoraMix.Audio.Analysis;
 
 public sealed record AudioAnalysisResult(
@@ -11,4 +13,8 @@ public sealed record AudioAnalysisResult(
     double Peak,
     int DetectedBeatCount,
     int EstimatedBarCount,
-    double AverageBeatIntervalSeconds);
+    double AverageBeatIntervalSeconds)
+{
+    // Init-only mantiene compatibili i costruttori esistenti e le vecchie cache JSON.
+    public TrackAudioFeatures Features { get; init; } = new();
+}
